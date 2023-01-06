@@ -50,7 +50,7 @@ func (s *fenixExecutionConnectorGrpcServicesServer) TriggerReportCompleteTestIns
 	var finalTestInstructionExecutionResultMessage *fenixExecutionWorkerGrpcApi.FinalTestInstructionExecutionResultMessage
 	finalTestInstructionExecutionResultMessage = &fenixExecutionWorkerGrpcApi.FinalTestInstructionExecutionResultMessage{
 		ClientSystemIdentification: &fenixExecutionWorkerGrpcApi.ClientSystemIdentificationMessage{
-			DomainUuid:                   systemSpecific_SC.DomainUuid,
+			DomainUuid:                   string(systemSpecific_SC.DomainUuid),
 			ProtoFileVersionUsedByClient: fenixExecutionWorkerGrpcApi.CurrentFenixExecutionWorkerProtoFileVersionEnum(common_config.GetHighestExecutionWorkerProtoFileVersion()),
 		},
 		TestInstructionExecutionUuid:         triggerTestInstructionExecutionResultMessage.TestInstructionExecutionUuid,

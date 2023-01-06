@@ -86,7 +86,7 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SetConnect
 			common_config.Logger.WithFields(logrus.Fields{
 				"ID": "0c650bbc-45d0-4029-bd25-4ced9925a059",
 				"common_config.FenixExecutionWorkerAddressToDial": common_config.FenixExecutionWorkerAddressToDial,
-			}).Debug("gRPC connection OK to FenixExecutionServer")
+			}).Debug("gRPC connection OK to FenixExecutionWorker")
 
 			// Creates a new Client
 			fenixExecutionWorkerGrpcClient = fenixExecutionWorkerGrpcApi.NewFenixExecutionWorkerConnectorGrpcServicesClient(remoteFenixExecutionWorkerServerConnection)
