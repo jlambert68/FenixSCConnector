@@ -108,8 +108,8 @@ func PostTestInstructionUsingRestCall(fangEngineRestApiMessageValues *FangEngine
 
 	default:
 		rand.Seed(time.Now().UnixNano())
-		min := 800
-		max := 1000
+		min := 5
+		max := 10
 		myRandomNumber := rand.Intn(max-min+1) + min
 		fmt.Println("....sleeping for " + strconv.Itoa(myRandomNumber) + " seconds...")
 		time.Sleep(time.Second * time.Duration(myRandomNumber))

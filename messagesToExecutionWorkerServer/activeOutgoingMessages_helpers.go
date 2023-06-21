@@ -59,6 +59,8 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SetConnect
 		var newGrpcClientConnection *grpc.ClientConn
 		if common_config.ExecutionLocationForFenixExecutionWorkerServer == common_config.GCP {
 			// Run on GCP
+			// TODO add keep-alive in the call
+			// TODO https://stackoverflow.com/questions/62441316/golang-grpc-cant-keep-alive-the-client-connection-is-closing
 			ctx, newGrpcClientConnection = dialFromGrpcurl(ctx)
 			remoteFenixExecutionWorkerServerConnection = newGrpcClientConnection
 			//remoteFenixExecutionWorkerServerConnection, err = grpc.Dial(common_config.FenixExecutionWorkerAddressToDial, opts...)

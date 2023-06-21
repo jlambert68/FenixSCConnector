@@ -32,4 +32,6 @@ var (
 	UseServiceAccount                 bool
 	ApplicationShouldRunInTray        bool
 	TurnOffCallToWorker               bool
+	AuthClientId                      string
+	AuthClientSecret                  string
 )

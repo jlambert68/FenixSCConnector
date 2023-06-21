@@ -5,6 +5,8 @@ import (
 	"FenixSCConnector/connectorEngine"
 	"FenixSCConnector/gRPCServer"
 	"FenixSCConnector/messagesToExecutionWorkerServer"
+	"fmt"
+	uuidGenerator "github.com/google/uuid"
 	fenixExecutionConnectorGrpcApi "github.com/jlambert68/FenixGrpcApi/FenixExecutionServer/fenixExecutionConnectorGrpcApi/go_grpc_api"
 	"github.com/sirupsen/logrus"
 )
@@ -28,6 +30,10 @@ func cleanup() {
 }
 
 func fenixExecutionConnectorMain() {
+
+	// Create Unique Uuid for run time instance used as identification when communication with GuiExecutionServer
+	common_config.ApplicationRunTimeUuid = uuidGenerator.New().String()
+	fmt.Println("sharedCode.ApplicationRunTimeUuid: " + common_config.ApplicationRunTimeUuid)
 
 	// Set up BackendObject
 	fenixExecutionConnectorObject = &fenixExecutionConnectorObjectStruct{

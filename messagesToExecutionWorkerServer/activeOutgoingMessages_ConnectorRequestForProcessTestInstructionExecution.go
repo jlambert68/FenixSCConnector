@@ -213,8 +213,8 @@ func ConvertTestInstructionIntoFangEngineStructure(processTestInstructionExecuti
 	} else {
 		// Generate duration for Execution:: TODO This is only for test and should be done in another way later
 		rand.Seed(time.Now().UnixNano())
-		min := 800
-		max := 1000
+		min := 180
+		max := 200
 		myRandomNumber := rand.Intn(max-min+1) + min
 
 		executionDuration := time.Second * time.Duration(myRandomNumber)

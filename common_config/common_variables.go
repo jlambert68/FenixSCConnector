@@ -15,3 +15,6 @@ var Logger *logrus.Logger
 const LocalWebServerAddressAndPort = "127.0.0.1:8080"
 
 var FenixSCConnectorApplicationReference *fyne.App
+
+// Unique 'Uuid' for this running instance. Created at start up. Used as identification
+var ApplicationRunTimeUuid string

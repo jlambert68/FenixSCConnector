@@ -5,6 +5,7 @@ go 1.18
 require (
 	fyne.io/fyne/v2 v2.2.3
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/pat v1.0.1
 	github.com/gorilla/sessions v1.2.1

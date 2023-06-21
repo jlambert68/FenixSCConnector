@@ -522,4 +522,10 @@ func init() {
 	}
 	common_config.TurnOffCallToWorker = boolValue
 
+	// Extract OAuth 2.0 Client ID
+	common_config.AuthClientId = mustGetenv("AuthClientId")
+
+	// Extract OAuth 2.0 Client Secret
+	common_config.AuthClientSecret = mustGetenv("AuthClientSecret")
+
 }

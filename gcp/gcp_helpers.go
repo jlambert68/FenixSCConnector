@@ -146,9 +146,9 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUser(ctx context.
 
 	// Need to create a new ID-token
 
-	key := "Secret-session-key-FenixSCConnector" // Replace with your SESSION_SECRET or similar
-	maxAge := 86400 * 30                         // 30 days
-	isProd := false                              // Set to true when serving over https
+	key := common_config.ApplicationRunTimeUuid // Replace with your SESSION_SECRET or similar
+	maxAge := 86400 * 30                        // 30 days
+	isProd := false                             // Set to true when serving over https
 
 	store := sessions.NewCookieStore([]byte(key))
 	store.MaxAge(maxAge)
@@ -159,13 +159,14 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUser(ctx context.
 	gothic.Store = store
 
 	goth.UseProviders(
-		//google.New("our-google-client-id", "our-google-client-secret", "http://localhost:3000/auth/google/callback", "email", "profile"),
-		google.New("944682210385-gpambi3aqcs7g6nf5abm7vdhi32crp8l.apps.googleusercontent.com", "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", "http://localhost:3000/auth/google/callback", "email", "profile"),
-		//google.New("545236753209-kqn7ibor4guvatfd5j3m5kdt5ivgv2f4.apps.googleusercontent.com", "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", "http://localhost:3000/auth/google/callback", "email", "profile"),
+		// Use 'Fenix End User Authentication'
+		google.New(
+			common_config.AuthClientId,
+			common_config.AuthClientSecret,
+			"http://localhost:3000/auth/google/callback",
+			"email", "profile"),
 	)
-	//545236753209-kqn7ibor4guvatfd5j3m5kdt5ivgv2f4.apps.googleusercontent.com
-	//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
-	//"fenixguitestcasebuilderserver-nwxrrpoxea-lz.a.run.app",
+
 	router := pat.New()
 
 	router.Get("/auth/{provider}/callback", func(res http.ResponseWriter, req *http.Request) {
@@ -245,11 +246,12 @@ func (gcp *GcpObjectStruct) startLocalWebServer(webServer *http.Server) {
 		time.Sleep(1 * time.Second)
 		err := webbrowser.Open("http://localhost:3000")
 
-		common_config.Logger.WithFields(logrus.Fields{
-			"ID":  "17bc0305-4594-48e1-bb8d-c642579e5e56",
-			"err": err,
-		}).Error("Couldn't open the web browser")
-
+		if err != nil {
+			common_config.Logger.WithFields(logrus.Fields{
+				"ID":  "17bc0305-4594-48e1-bb8d-c642579e5e56",
+				"err": err,
+			}).Fatalf("Couldn't open the web browser")
+		}
 	}()
 	err := webServer.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
