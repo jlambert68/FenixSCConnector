@@ -3,16 +3,8 @@ package main
 import (
 	"FenixSCConnector/common_config"
 	"FenixSCConnector/gcp"
-	"FenixSCConnector/resources"
 	"FenixSCConnector/restCallsToCAEngine"
 	"flag"
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
-	"fyne.io/fyne/v2/canvas"
-	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/driver/desktop"
-	"fyne.io/fyne/v2/layout"
-	"fyne.io/fyne/v2/widget"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"os/signal"
@@ -296,111 +288,25 @@ func main() {
 	// Start Connector Engine
 	go fenixExecutionConnectorMain()
 
-	// Start up Tray Application if it should that as that
-	if shouldRunInTray == "true" {
-		// Start application as TrayApplication
+	// Run as console program and exit as on standard exiting signals
+	sig := make(chan os.Signal, 1)
+	done := make(chan bool, 1)
 
-		a := app.NewWithID("FenixSCConnector")
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-		// Store reference to application, used for turning icon in tray RED/GREEN depending on when there is a connection to Worker
-		common_config.FenixSCConnectorApplicationReference = &a
+	go func() {
+		sig := <-sig
+		fmt.Println()
+		fmt.Println(sig)
+		done <- true
 
-		a.SetIcon(resources.ResourceFenix83red32x32Png)
-		mainFyneWindow := a.NewWindow("SysTray")
+		fmt.Println("ctrl+c")
+	}()
 
-		if desk, ok := a.(desktop.App); ok {
-			m := fyne.NewMenu("Fenix Execution Connector",
-				fyne.NewMenuItem("Hide", func() {
-					mainFyneWindow.Hide()
-					newNotification := fyne.NewNotification("Fenix Execution Connector", "Fenix will rule the 'Test World'")
+	fmt.Println("awaiting signal")
+	<-done
+	fmt.Println("exiting")
 
-					a.SendNotification(newNotification)
-				}))
-			desk.SetSystemTrayMenu(m)
-		}
-
-		// Create Fenix Splash screen
-		var splashWindow fyne.Window
-		if drv, ok := fyne.CurrentApp().Driver().(desktop.Driver); ok {
-			splashWindow = drv.CreateSplashWindow()
-
-			// Fenix Header
-			fenixHeaderText := canvas.Text{
-				Alignment: fyne.TextAlignCenter,
-				Color:     nil,
-				Text:      "Fenix Inception - SaaS",
-				TextSize:  20,
-				TextStyle: fyne.TextStyle{Bold: true},
-			}
-
-			// Text Footer
-			halFinney := widget.NewLabel("\"If you want to change the world, don't protest. Write code!\" - Hal Finney (1994)")
-
-			// Fenix picture
-			image := canvas.NewImageFromResource(resources.ResourceFenix12Png)
-			image.FillMode = canvas.ImageFillOriginal
-
-			// Container holding Header, picture and Footer
-			spashContainer := container.New(layout.NewVBoxLayout(), &fenixHeaderText, image, halFinney)
-
-			splashWindow.SetContent(spashContainer)
-			splashWindow.CenterOnScreen()
-			splashWindow.Show()
-
-			go func() {
-				time.Sleep(time.Millisecond * 1000)
-
-				mainFyneWindow.Hide()
-
-				time.Sleep(time.Second * 7)
-				splashWindow.Close()
-
-			}()
-
-			mainFyneWindow.SetContent(widget.NewLabel("Fyne System Tray"))
-			mainFyneWindow.SetCloseIntercept(func() {
-				mainFyneWindow.Hide()
-			})
-
-			mainFyneWindow.Hide()
-			go func() {
-				count := 10
-				for {
-					time.Sleep(time.Millisecond * 100)
-					//mainFyneWindow.Hide()
-					count = count - 1
-					if count == 0 {
-						break
-					}
-					return
-				}
-
-				//mainFyneWindow.Hide()
-			}()
-
-			mainFyneWindow.ShowAndRun()
-		}
-
-	} else {
-		// Run as console program and exit as on standard exiting signals
-		sig := make(chan os.Signal, 1)
-		done := make(chan bool, 1)
-
-		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-
-		go func() {
-			sig := <-sig
-			fmt.Println()
-			fmt.Println(sig)
-			done <- true
-
-			fmt.Println("ctrl+c")
-		}()
-
-		fmt.Println("awaiting signal")
-		<-done
-		fmt.Println("exiting")
-	}
 }
 
 func init() {
