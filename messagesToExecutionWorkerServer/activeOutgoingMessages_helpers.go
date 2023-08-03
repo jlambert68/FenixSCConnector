@@ -74,7 +74,7 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SetConnect
 				opts = []grpc.DialOption{
 					grpc.WithTransportCredentials(creds),
 				}
-				remoteFenixExecutionWorkerServerConnection, err = grpc.Dial(FenixExecutionWorkerAddressToDial, opts...)
+				remoteFenixExecutionWorkerServerConnection, err = grpc.Dial(common_config.FenixExecutionWorkerAddressToDial, opts...)
 
 			}
 
