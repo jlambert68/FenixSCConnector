@@ -4,7 +4,6 @@ import (
 	"FenixSCConnector/common_config"
 	"FenixSCConnector/gcp"
 	"FenixSCConnector/restCallsToCAEngine"
-	"flag"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"strconv"
@@ -116,135 +115,8 @@ func dumpMap(space string, m map[string]interface{}) {
 
 func main() {
 
-	// Parse flags if there are any. Used to override hard set values from build process
-	flagLoggingLevel := flag.String("flagLoggingLevel", "", "flagLoggingLevel=InfoLevel [expects: 'DebugLevel', 'InfoLevel']")
-	flagRunInTray := flag.String("flagRunInTray", "", "flagRunInTray=xxxxx [expects: 'true', 'false']")
-	flagUseInternalWebServerForTest := flag.String("flagUseInternalWebServerForTest", "", "flagUseInternalWebServerForTest=xxxxx [expects: 'true', 'false']")
-	flagCAEngineAddress := flag.String("flagCAEngineAddress", "", "flagCAEngineAddress=xxxxx [expects: 'http::/<some address to FangEngine>']")
-	flagTurnOffCallToWorker := flag.String("flagTurnOffCallToWorker", "", "flagTurnOffCallToWorker=xxxxx [expects: 'true', 'false']")
-
-	flag_ldflags := flag.String("ldflags", "", "ldflags should not be used")
-
-	/*
-	   RunInTray:
-	   	true
-	   UseInternalWebServerForTest:
-	   	true
-	   UseServiceAccount:
-	   	true
-
-
-	*/
-	// Parse flags a secure that only expected value are used
-	flag.Parse()
-
-	fmt.Println(*flag_ldflags)
-
-	// Verify flag for 'LoggingLevel'
-
-	switch *flagLoggingLevel {
-
-	case "":
-
-	case "DebugLevel":
-		common_config.LoggingLevel = logrus.DebugLevel
-
-	case "InfoLevel":
-		common_config.LoggingLevel = logrus.InfoLevel
-
-	default:
-		fmt.Println("Unknown loggingLevel: '" + loggingLevel + "'. Expected one of the following: 'DebugLevel', 'InfoLevel'")
-		os.Exit(0)
-	}
-
-	// Verify flag for 'RunInTray '
-	switch *flagRunInTray {
-
-	case "", "true", "false":
-
-	default:
-		fmt.Println("Unknown RunInTray-parameter '" + *flagRunInTray + "'. Expected one of the following: '', 'true', 'false'")
-		os.Exit(0)
-	}
-
-	// Verify flag for 'UseInternalWebServerForTest '
-	switch *flagUseInternalWebServerForTest {
-
-	case "":
-
-	case "true", "false":
-		// Extract if local web server for test should be used instead of FangEngine
-		boolValue, err := strconv.ParseBool(*flagUseInternalWebServerForTest)
-		if err != nil {
-			fmt.Println("Couldn't convert flag variable 'flagUseInternalWebServerForTest:' to an boolean, error: ", err)
-			os.Exit(0)
-		}
-		common_config.UseInternalWebServerForTest = boolValue
-
-	default:
-		fmt.Println("Unknown UseInternalWebServerForTest-parameter '" + *flagUseInternalWebServerForTest + "'. Expected one of the following: '', 'true', 'false'")
-		os.Exit(0)
-	}
-
-	// Verify flag for 'CAEngineAddress '
-	switch *flagCAEngineAddress {
-
-	case "":
-
-	default:
-		common_config.CAEngineAddress = *flagCAEngineAddress
-
-	}
-
-	// Verify flag for 'CAEngineAddress '
-	switch *flagCAEngineAddress {
-
-	case "":
-
-	default:
-		common_config.CAEngineAddress = *flagCAEngineAddress
-
-	}
-
-	var logFileName string
-
-	// Extract from environment variables if it should run as a tray application or not
-	var shouldRunInTray string
-	if *flagRunInTray == "" {
-		shouldRunInTray = mustGetenv("RunInTray")
-	} else {
-		shouldRunInTray = *flagRunInTray
-	}
-
-	// When run as Tray application then add log-name
-	if shouldRunInTray == "true" {
-		common_config.ApplicationShouldRunInTray = true
-		logFileName = "fenixConnectorLog.log"
-	} else {
-		logFileName = ""
-	}
-
-	// Verify flag for 'TurnOffCallToWorker '
-	switch *flagTurnOffCallToWorker {
-
-	case "":
-
-	case "true", "false":
-		// Extract if Worker should be called for TestInstructions or not
-		boolValue, err := strconv.ParseBool(*flagTurnOffCallToWorker)
-		if err != nil {
-			fmt.Println("Couldn't convert flag variable 'flagTurnOffCallToWorker:' to an boolean, error: ", err)
-			os.Exit(0)
-		}
-		common_config.TurnOffCallToWorker = boolValue
-
-	default:
-		fmt.Println("Unknown TurnOffCallToWorker-parameter '" + *flagTurnOffCallToWorker + "'. Expected one of the following: '', 'true', 'false'")
-		os.Exit(0)
-	}
-
 	// Initiate logger in common_config
-	InitLogger(logFileName)
+	InitLogger("")
 
 	// When Execution Worker runs on GCP, then set up access
 	if common_config.ExecutionLocationForFenixExecutionWorkerServer == common_config.GCP &&
