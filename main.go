@@ -7,9 +7,7 @@ import (
 	"flag"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
-	"os/signal"
 	"strconv"
-	"syscall"
 	"time"
 
 	//"flag"
@@ -286,26 +284,30 @@ func main() {
 	}
 
 	// Start Connector Engine
-	go fenixExecutionConnectorMain()
+	fenixExecutionConnectorMain()
 
-	// Run as console program and exit as on standard exiting signals
-	sig := make(chan os.Signal, 1)
-	done := make(chan bool, 1)
+	/*
 
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+		// Run as console program and exit as on standard exiting signals
+		sig := make(chan os.Signal, 1)
+		done := make(chan bool, 1)
 
-	go func() {
-		sig := <-sig
-		fmt.Println()
-		fmt.Println(sig)
-		done <- true
+		signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-		fmt.Println("ctrl+c")
-	}()
+		go func() {
+			sig := <-sig
+			fmt.Println()
+			fmt.Println(sig)
+			done <- true
 
-	fmt.Println("awaiting signal")
-	<-done
-	fmt.Println("exiting")
+			fmt.Println("ctrl+c")
+		}()
+
+		fmt.Println("awaiting signal")
+		<-done
+		fmt.Println("exiting")
+
+	*/
 
 }
 
