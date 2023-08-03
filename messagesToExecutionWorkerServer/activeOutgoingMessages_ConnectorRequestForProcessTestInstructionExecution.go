@@ -3,10 +3,8 @@ package messagesToExecutionWorkerServer
 import (
 	"FenixSCConnector/common_config"
 	"FenixSCConnector/gcp"
-	"FenixSCConnector/resources"
 	"FenixSCConnector/restCallsToCAEngine"
 	"context"
-	"fyne.io/fyne/v2"
 	fenixExecutionWorkerGrpcApi "github.com/jlambert68/FenixGrpcApi/FenixExecutionServer/fenixExecutionWorkerGrpcApi/go_grpc_api"
 	"github.com/jlambert68/FenixTestInstructionsDataAdmin/Domains"
 	"github.com/sirupsen/logrus"
@@ -91,14 +89,6 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) InitiateCo
 	// Local channel to decide when Server stopped sending
 	done := make(chan bool)
 
-	// Connection to Worker is up so change Tray icon to "green", BUT ONLY when run as Tray App
-	var myApplication fyne.App
-	if common_config.FenixSCConnectorApplicationReference != nil {
-		myApplication = *common_config.FenixSCConnectorApplicationReference
-		myApplication.SetIcon(resources.ResourceFenix83green32x32Png)
-
-	}
-
 	// Run streamClient receiver as a go-routine
 	go func() {
 		for {
@@ -176,11 +166,6 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) InitiateCo
 
 	// Server stopped sending so reconnect again in 5 seconds
 	<-done
-
-	// Change Tray icon to "red", BUT ONLY when run as Tray App
-	if common_config.FenixSCConnectorApplicationReference != nil {
-		myApplication.SetIcon(resources.ResourceFenix83red32x32Png)
-	}
 
 	common_config.Logger.WithFields(logrus.Fields{
 		"ID": "0b5fdb7c-91aa-4dfc-b587-7b6cef83d224",
