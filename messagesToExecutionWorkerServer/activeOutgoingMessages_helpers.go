@@ -58,14 +58,28 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SetConnect
 		// When run on GCP, use credentials
 		var newGrpcClientConnection *grpc.ClientConn
 		if common_config.ExecutionLocationForFenixExecutionWorkerServer == common_config.GCP {
-			// Run on GCP
-			// TODO add keep-alive in the call
-			// TODO https://stackoverflow.com/questions/62441316/golang-grpc-cant-keep-alive-the-client-connection-is-closing
-			ctx, newGrpcClientConnection = dialFromGrpcurl(ctx)
-			remoteFenixExecutionWorkerServerConnection = newGrpcClientConnection
-			//remoteFenixExecutionWorkerServerConnection, err = grpc.Dial(common_config.FenixExecutionWorkerAddressToDial, opts...)
+			// Worker runs on GCP
+
+			if common_config.ExecutionLocationForConnector == common_config.LocalhostNoDocker {
+				// Connector runs Locally
+				ctx, newGrpcClientConnection = dialFromGrpcurl(ctx)
+				remoteFenixExecutionWorkerServerConnection = newGrpcClientConnection
+			} else {
+				// Connector runs on GCP
+				creds := credentials.NewTLS(&tls.Config{
+					InsecureSkipVerify: true,
+				})
+
+				var opts []grpc.DialOption
+				opts = []grpc.DialOption{
+					grpc.WithTransportCredentials(creds),
+				}
+				remoteFenixExecutionWorkerServerConnection, err = grpc.Dial(FenixExecutionWorkerAddressToDial, opts...)
+
+			}
+
 		} else {
-			// Run Local
+			// Worker runs Local
 			remoteFenixExecutionWorkerServerConnection, err = grpc.Dial(common_config.FenixExecutionWorkerAddressToDial, grpc.WithInsecure())
 		}
 		if err != nil {
