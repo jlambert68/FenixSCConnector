@@ -18,7 +18,7 @@ import (
 
 func PullMsgs(w io.Writer) error {
 	projectID := common_config.GcpProject
-	subID := "testinstruction-execution"
+	subID := "testinstruction-execution-sub"
 
 	var pubSubClient *pubsub.Client
 	var err error
