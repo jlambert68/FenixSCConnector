@@ -127,7 +127,7 @@ func main() {
 		ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 
 		// Generate first time Access token
-		_, returnMessageAckNack, returnMessageString := gcp.Gcp.GenerateGCPAccessToken(ctx)
+		_, returnMessageAckNack, returnMessageString := gcp.Gcp.GenerateGCPAccessToken(ctx, gcp.GenerateTokenForGrpcTowardsExecutionWorker)
 		if returnMessageAckNack == false {
 
 			// If there was any problem then exit program

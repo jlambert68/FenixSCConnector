@@ -18,11 +18,23 @@ import (
 	"time"
 )
 
-func (gcp *GcpObjectStruct) GenerateGCPAccessToken(ctx context.Context) (appendedCtx context.Context, returnAckNack bool, returnMessage string) {
+// GenerateTokenTargetType
+// Type used to define
+type GenerateTokenTargetType int
+
+// GenerateTokenForExecutionServer
+// Constants used to define what Token should be used for
+const (
+	GenerateTokenForGrpcTowardsExecutionWorker GenerateTokenTargetType = iota
+	GenerateTokenForPubSub
+)
+
+func (gcp *GcpObjectStruct) GenerateGCPAccessToken(ctx context.Context, tokenTarget GenerateTokenTargetType) (appendedCtx context.Context, returnAckNack bool, returnMessage string) {
 
 	// Chose correct method for authentication
-	if true { // common_config.UseServiceAccount == true {
+	switch tokenTarget { // common_config.UseServiceAccount == true {
 
+	case GenerateTokenForGrpcTowardsExecutionWorker:
 		// Only use Authorized used when running locally and WorkerServer is on GCP
 		if common_config.ExecutionLocationForConnector == common_config.LocalhostNoDocker &&
 			common_config.ExecutionLocationForFenixExecutionWorkerServer == common_config.GCP {
@@ -35,11 +47,18 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessToken(ctx context.Context) (appende
 			appendedCtx, returnAckNack, returnMessage = gcp.generateGCPAccessToken(ctx)
 		}
 
-	} else {
-		// User log into GCP via web
-		appendedCtx, returnAckNack, returnMessage = gcp.GenerateGCPAccessTokenForAuthorizedUser(ctx)
-	}
+	case GenerateTokenForPubSub:
+		// Only use Authorized used when running locally and ExecutionServer is in GCP
+		if common_config.ExecutionLocationForConnector == common_config.LocalhostNoDocker {
 
+			// Use Authorized user when targeting GCP from local
+			appendedCtx, returnAckNack, returnMessage = gcp.GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx)
+
+		} else {
+			// Use Authorized user
+			appendedCtx, returnAckNack, returnMessage = gcp.generateGCPAccessTokenPubSub(ctx)
+		}
+	}
 	return appendedCtx, returnAckNack, returnMessage
 
 }
@@ -84,6 +103,57 @@ func (gcp *GcpObjectStruct) generateGCPAccessToken(ctx context.Context) (appende
 
 	common_config.Logger.WithFields(logrus.Fields{
 		"ID": "9bfd3d3a-7155-4f72-9cbc-e051f4544135",
+		//"FenixExecutionWorkerObject.gcpAccessToken": gcp.gcpAccessTokenForServiceAccounts,
+	}).Debug("Will use Bearer Token")
+
+	// Add token to GrpcServer Request.
+	appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForServiceAccounts.AccessToken)
+
+	return appendedCtx, true, ""
+
+}
+
+// Generate Google access token for Pub Sub
+func (gcp *GcpObjectStruct) generateGCPAccessTokenPubSub(ctx context.Context) (appendedCtx context.Context, returnAckNack bool, returnMessage string) {
+
+	// Only create the token if there is none, or it has expired
+	if gcp.gcpAccessTokenForServiceAccountsPubSub == nil || gcp.gcpAccessTokenForServiceAccountsPubSub.Expiry.Before(time.Now()) {
+
+		// Create an identity token.
+		// With a global TokenSource tokens would be reused and auto-refreshed at need.
+		// A given TokenSource is specific to the audience.
+
+		tokenSource, err := idtoken.NewTokenSource(ctx, "https://www.googleapis.com/auth/pubsub")
+		if err != nil {
+			gcp.logger.WithFields(logrus.Fields{
+				"ID":  "ffb7cdcc-00f1-4560-9fd6-a45d2423230d",
+				"err": err,
+			}).Error("Couldn't generate access token")
+
+			return nil, false, "Couldn't generate access token"
+		}
+
+		token, err := tokenSource.Token()
+		if err != nil {
+			gcp.logger.WithFields(logrus.Fields{
+				"ID":  "6f335c25-b020-4748-85ab-eda80e53b9a0",
+				"err": err,
+			}).Error("Problem getting the token")
+
+			return nil, false, "Problem getting the token"
+		} else {
+			gcp.logger.WithFields(logrus.Fields{
+				"ID": "a17e40dc-e7fc-4d7e-afbc-072a4c21850b",
+				//"token": token,
+			}).Debug("Got Bearer Token")
+		}
+
+		gcp.gcpAccessTokenForServiceAccountsPubSub = token
+
+	}
+
+	gcp.logger.WithFields(logrus.Fields{
+		"ID": "42427b1e-af8d-4153-9963-85c36a0f58cf",
 		//"FenixExecutionWorkerObject.gcpAccessToken": gcp.gcpAccessTokenForServiceAccounts,
 	}).Debug("Will use Bearer Token")
 
@@ -206,6 +276,115 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUser(ctx context.
 
 }
 
+func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx context.Context) (appendedCtx context.Context, returnAckNack bool, returnMessage string) {
+
+	// Secure that User is initiated
+	gcp.initiateUserObjectPubSub()
+
+	// Only create the token if there is none, or it has expired (or 5 minutes before expiration
+	timeToCompareTo := time.Now().Add(-time.Minute * 5)
+	if !(gcp.gcpAccessTokenForAuthorizedAccountsPubSub.IDToken == "" || gcp.gcpAccessTokenForAuthorizedAccountsPubSub.ExpiresAt.Before(timeToCompareTo)) {
+		// We already have a ID-token that can be used, so return that
+		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForAuthorizedAccountsPubSub.IDToken)
+
+		return appendedCtx, true, ""
+	}
+
+	// Need to create a new ID-token
+
+	key := common_config.ApplicationRunTimeUuid // Replace with your SESSION_SECRET or similar
+	maxAge := 86400 * 30                        // 30 days
+	isProd := false                             // Set to true when serving over https
+
+	store := sessions.NewCookieStore([]byte(key))
+	store.MaxAge(maxAge)
+	store.Options.Path = "/"
+	store.Options.HttpOnly = true // HttpOnly should always be enabled
+	store.Options.Secure = isProd
+
+	gothic.Store = store
+
+	goth.UseProviders(
+		// Use 'Fenix End User Authentication'
+		google.New(
+			common_config.AuthClientId,
+			common_config.AuthClientSecret,
+			"http://localhost:3000/auth/google/callback",
+			"email", "https://www.googleapis.com/auth/pubsub"),
+	)
+
+	router := pat.New()
+
+	router.Get("/auth/{provider}/callback", func(res http.ResponseWriter, req *http.Request) {
+
+		user, err := gothic.CompleteUserAuth(res, req)
+		if err != nil {
+
+			fmt.Fprintln(res, err)
+
+			return
+		}
+		t, _ := template.ParseFiles("templates/success.html")
+		t.Execute(res, user)
+
+		// Save ID-token
+		gcp.gcpAccessTokenForAuthorizedAccountsPubSub = user
+
+		// Trigger Close of Web Server, and 'true' means that a ID-to
+		DoneChannel <- true
+
+	})
+
+	router.Get("/logout/{provider}", func(res http.ResponseWriter, req *http.Request) {
+		gothic.Logout(res, req)
+		res.Header().Set("Location", "/")
+		res.WriteHeader(http.StatusTemporaryRedirect)
+	})
+
+	router.Get("/auth/{provider}", func(res http.ResponseWriter, req *http.Request) {
+		gothic.BeginAuthHandler(res, req)
+	})
+
+	router.Get("/", func(res http.ResponseWriter, req *http.Request) {
+		t, _ := template.ParseFiles("templates/index.html")
+		t.Execute(res, false)
+	})
+
+	// Initiate channel used to stop server
+	DoneChannel = make(chan bool, 1)
+
+	// Initiate http server
+	localWebServer := &http.Server{
+		Addr:    ":3000",
+		Handler: router,
+	}
+
+	// Start Local Web Server as go routine
+	go gcp.startLocalWebServer(localWebServer)
+
+	gcp.logger.WithFields(logrus.Fields{
+		"ID": "689d42de-3cc0-4237-b1e9-3a6c769f65ea",
+	}).Debug("Local webServer Started")
+
+	// Wait for message in channel to stop local web server
+	gotIdTokenResult := <-DoneChannel
+
+	// Shutdown local web server
+	gcp.stopLocalWebServer(context.Background(), localWebServer)
+
+	// Depending on the outcome of getting a token return different results
+	if gotIdTokenResult == true {
+		// Success in getting an ID-token
+		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForAuthorizedAccountsPubSub.IDToken)
+
+		return appendedCtx, true, ""
+	} else {
+		// Didn't get any ID-token
+		return nil, false, "Couldn't generate access token"
+	}
+
+}
+
 // Start and run Local Web Server
 func (gcp *GcpObjectStruct) startLocalWebServer(webServer *http.Server) {
 
@@ -276,6 +455,20 @@ func (gcp *GcpObjectStruct) initiateUserObject() {
 
 	if gcp.gcpAccessTokenForAuthorizedAccounts.UserID == "" {
 		gcp.gcpAccessTokenForAuthorizedAccounts = goth.User{}
+	}
+
+	return
+
+}
+
+// initiateUserObject
+// Set to use the same Logger reference as is used by central part of system
+func (gcp *GcpObjectStruct) initiateUserObjectPubSub() {
+
+	// Only do initiation if it's not done before
+
+	if gcp.gcpAccessTokenForAuthorizedAccountsPubSub.UserID == "" {
+		gcp.gcpAccessTokenForAuthorizedAccountsPubSub = goth.User{}
 	}
 
 	return

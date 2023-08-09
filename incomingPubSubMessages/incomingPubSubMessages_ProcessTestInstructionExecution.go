@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"io"
 	"sync/atomic"
+	"time"
 )
 
-func pullMsgs(w io.Writer) error {
+func PullMsgs(w io.Writer) error {
 	projectID := common_config.GcpProject
 	subID := "testinstruction-execution"
 	ctx := context.Background()
@@ -24,8 +25,8 @@ func pullMsgs(w io.Writer) error {
 	// Receive messages for 10 seconds, which simplifies testing.
 	// Comment this out in production, since `Receive` should
 	// be used as a long running operation.
-	//ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	// defer cancel()
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 
 	var received int32
 	err = sub.Receive(ctx, func(_ context.Context, msg *pubsub.Message) {
