@@ -308,4 +308,7 @@ func init() {
 	// Extract OAuth 2.0 Client Secret
 	common_config.AuthClientSecret = mustGetenv("AuthClientSecret")
 
+	// Extract the GCP-project
+	common_config.GcpProject = mustGetenv("GcpProject")
+
 }

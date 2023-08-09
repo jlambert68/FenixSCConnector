@@ -34,4 +34,5 @@ var (
 	TurnOffCallToWorker               bool
 	AuthClientId                      string
 	AuthClientSecret                  string
+	GcpProject                        string
 )
