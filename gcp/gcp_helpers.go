@@ -125,7 +125,7 @@ func (gcp *GcpObjectStruct) generateGCPAccessTokenPubSub(ctx context.Context) (a
 
 		tokenSource, err := idtoken.NewTokenSource(ctx, "https://www.googleapis.com/auth/pubsub")
 		if err != nil {
-			gcp.logger.WithFields(logrus.Fields{
+			common_config.Logger.WithFields(logrus.Fields{
 				"ID":  "ffb7cdcc-00f1-4560-9fd6-a45d2423230d",
 				"err": err,
 			}).Error("Couldn't generate access token")
@@ -135,14 +135,14 @@ func (gcp *GcpObjectStruct) generateGCPAccessTokenPubSub(ctx context.Context) (a
 
 		token, err := tokenSource.Token()
 		if err != nil {
-			gcp.logger.WithFields(logrus.Fields{
+			common_config.Logger.WithFields(logrus.Fields{
 				"ID":  "6f335c25-b020-4748-85ab-eda80e53b9a0",
 				"err": err,
 			}).Error("Problem getting the token")
 
 			return nil, false, "Problem getting the token"
 		} else {
-			gcp.logger.WithFields(logrus.Fields{
+			common_config.Logger.WithFields(logrus.Fields{
 				"ID": "a17e40dc-e7fc-4d7e-afbc-072a4c21850b",
 				//"token": token,
 			}).Debug("Got Bearer Token")
@@ -152,7 +152,7 @@ func (gcp *GcpObjectStruct) generateGCPAccessTokenPubSub(ctx context.Context) (a
 
 	}
 
-	gcp.logger.WithFields(logrus.Fields{
+	common_config.Logger.WithFields(logrus.Fields{
 		"ID": "42427b1e-af8d-4153-9963-85c36a0f58cf",
 		//"FenixExecutionWorkerObject.gcpAccessToken": gcp.gcpAccessTokenForServiceAccounts,
 	}).Debug("Will use Bearer Token")
@@ -362,7 +362,7 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx co
 	// Start Local Web Server as go routine
 	go gcp.startLocalWebServer(localWebServer)
 
-	gcp.logger.WithFields(logrus.Fields{
+	common_config.Logger.WithFields(logrus.Fields{
 		"ID": "689d42de-3cc0-4237-b1e9-3a6c769f65ea",
 	}).Debug("Local webServer Started")
 
