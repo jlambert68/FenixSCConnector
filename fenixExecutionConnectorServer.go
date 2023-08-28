@@ -10,8 +10,6 @@ import (
 	uuidGenerator "github.com/google/uuid"
 	fenixExecutionConnectorGrpcApi "github.com/jlambert68/FenixGrpcApi/FenixExecutionServer/fenixExecutionConnectorGrpcApi/go_grpc_api"
 	"github.com/sirupsen/logrus"
-	"log"
-	"os"
 )
 
 // Used for only process cleanup once
@@ -49,6 +47,12 @@ func fenixExecutionConnectorMain() {
 		},
 	}
 
+	connectorEngine.TestInstructionExecutionEngine = connectorEngine.TestInstructionExecutionEngineStruct{
+		MessagesToExecutionWorkerObjectReference: &messagesToExecutionWorkerServer.MessagesToExecutionWorkerObjectStruct{
+			//GcpAccessToken: nil,
+		},
+	}
+
 	// Init logger
 	//fenixExecutionConnectorObject.InitLogger(loggerFileName)
 	fenixExecutionConnectorObject.logger = common_config.Logger
@@ -56,10 +60,8 @@ func fenixExecutionConnectorMain() {
 	// Clean up when leaving. Is placed after logger because shutdown logs information
 	defer cleanup()
 
-	err := incomingPubSubMessages.PullMsgs(os.Stdout)
-	if err != nil {
-		log.Fatalf("Error: %v", err)
-	}
+	// Start up PubSub-receiver
+	go incomingPubSubMessages.PullPubSubTestInstructionExecutionMessagessages()
 
 	// Initiate CommandChannel
 	connectorEngine.ExecutionEngineCommandChannel = make(chan connectorEngine.ChannelCommandStruct)

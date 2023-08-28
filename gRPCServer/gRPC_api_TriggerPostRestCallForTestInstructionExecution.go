@@ -89,7 +89,7 @@ func (s *fenixExecutionConnectorGrpcServicesServer) TriggerPostRestCallForTestIn
 	// Convert 'TestInstruction' into useful structure later to be used by FangEngine
 	var processTestInstructionExecutionReversedResponse *fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReversedResponse
 	var fangEngineRestApiMessageValues *restCallsToCAEngine.FangEngineRestApiMessageStruct
-	processTestInstructionExecutionReversedResponse, fangEngineRestApiMessageValues = messagesToExecutionWorkerServer.ConvertTestInstructionIntoFangEngineStructure(&processTestInstructionExecutionReveredRequestWorkerVersion)
+	processTestInstructionExecutionReversedResponse, _, fangEngineRestApiMessageValues = messagesToExecutionWorkerServer.ConvertTestInstructionIntoFangEngineStructure(&processTestInstructionExecutionReveredRequestWorkerVersion)
 
 	// *********************************************
 

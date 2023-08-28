@@ -127,12 +127,14 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) InitiateCo
 				go func() {
 
 					// Call 'CA' backend to convert 'TestInstruction' into useful structure later to be used by FangEngine
-					var processTestInstructionExecutionReversedResponse *fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReversedResponse
 					var fangEngineRestApiMessageValues *restCallsToCAEngine.FangEngineRestApiMessageStruct
-					processTestInstructionExecutionReversedResponse, fangEngineRestApiMessageValues = ConvertTestInstructionIntoFangEngineStructure(processTestInstructionExecutionReveredRequest)
+					var processTestInstructionExecutionReversedResponse *fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReversedResponse // Used When Reversed stream-response is used
+					processTestInstructionExecutionReversedResponse, _, fangEngineRestApiMessageValues =
+						ConvertTestInstructionIntoFangEngineStructure(processTestInstructionExecutionReveredRequest)
 
 					// Send 'ProcessTestInstructionExecutionReversedResponse' back to worker over direct gRPC-call
-					couldSend, returnMessage := toExecutionWorkerObject.SendConnectorProcessTestInstructionExecutionReversedResponseToFenixWorkerServer(processTestInstructionExecutionReversedResponse)
+					couldSend, returnMessage := toExecutionWorkerObject.
+						SendConnectorProcessTestInstructionExecutionReversedResponseToFenixWorkerServer(processTestInstructionExecutionReversedResponse)
 
 					if couldSend == false {
 						common_config.Logger.WithFields(logrus.Fields{
@@ -174,53 +176,107 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) InitiateCo
 }
 
 // Call 'CA' backend to convert 'TestInstruction' into useful structure later to be used by FangEngine
-func ConvertTestInstructionIntoFangEngineStructure(processTestInstructionExecutionReveredRequest *fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReveredRequest) (processTestInstructionExecutionReversedResponse *fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReversedResponse, fangEngineRestApiMessageValues *restCallsToCAEngine.FangEngineRestApiMessageStruct) {
+func ConvertTestInstructionIntoFangEngineStructure(
+	processTestInstructionExecutionReveredRequest *fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReveredRequest) (
+	processTestInstructionExecutionReversedResponse *fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReversedResponse, // Used When Reversed stream-response is used
+	processTestInstructionExecutionResponse *fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionResponse, // Used when PubSub-requests are used
+	fangEngineRestApiMessageValues *restCallsToCAEngine.FangEngineRestApiMessageStruct) {
+
 	fangEngineRestApiMessageValues, err := restCallsToCAEngine.ConvertTestInstructionIntoFangEngineRestCallMessage(processTestInstructionExecutionReveredRequest)
 
 	// Generate response depending on if the 'TestInstruction' could be converted into useful FangEngine-information or not
 
-	if err != nil {
-		// Couldn't convert into FangEngine-messageType
-		timeAtDurationEnd := time.Now()
+	// Create correct response message structure depending on if PubSub are used or not
+	if common_config.UsePubSubToReceiveMessagesFromWorker == true {
 
-		// Generate response message to Worker, that conversion didn't work out
-		processTestInstructionExecutionReversedResponse = &fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReversedResponse{
-			AckNackResponse: &fenixExecutionWorkerGrpcApi.AckNackResponse{
-				AckNack:                      false,
-				Comments:                     err.Error(),
-				ErrorCodes:                   nil,
-				ProtoFileVersionUsedByClient: fenixExecutionWorkerGrpcApi.CurrentFenixExecutionWorkerProtoFileVersionEnum(common_config.GetHighestExecutionWorkerProtoFileVersion()),
-			},
-			TestInstructionExecutionUuid:   processTestInstructionExecutionReveredRequest.TestInstruction.TestInstructionExecutionUuid,
-			ExpectedExecutionDuration:      timestamppb.New(timeAtDurationEnd),
-			TestInstructionCanBeReExecuted: true,
+		// Response from PubSub-request
+		if err != nil {
+			// Couldn't convert into FangEngine-messageType
+			timeAtDurationEnd := time.Now()
+
+			// Generate response message to Worker, that conversion didn't work out
+			processTestInstructionExecutionResponse = &fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionResponse{
+				AckNackResponse: &fenixExecutionWorkerGrpcApi.AckNackResponse{
+					AckNack:                      false,
+					Comments:                     err.Error(),
+					ErrorCodes:                   nil,
+					ProtoFileVersionUsedByClient: fenixExecutionWorkerGrpcApi.CurrentFenixExecutionWorkerProtoFileVersionEnum(common_config.GetHighestExecutionWorkerProtoFileVersion()),
+				},
+				TestInstructionExecutionUuid:   processTestInstructionExecutionReveredRequest.TestInstruction.TestInstructionExecutionUuid,
+				ExpectedExecutionDuration:      timestamppb.New(timeAtDurationEnd),
+				TestInstructionCanBeReExecuted: true,
+			}
+		} else {
+			// Generate duration for Execution:: TODO This is only for test and should be done in another way later
+			rand.Seed(time.Now().UnixNano())
+			min := 180
+			max := 200
+			myRandomNumber := rand.Intn(max-min+1) + min
+
+			executionDuration := time.Second * time.Duration(myRandomNumber)
+			timeAtDurationEnd := time.Now().Add(executionDuration)
+
+			// Generate OK response message to Worker
+			processTestInstructionExecutionResponse = &fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionResponse{
+				AckNackResponse: &fenixExecutionWorkerGrpcApi.AckNackResponse{
+					AckNack:                      true,
+					Comments:                     "",
+					ErrorCodes:                   nil,
+					ProtoFileVersionUsedByClient: fenixExecutionWorkerGrpcApi.CurrentFenixExecutionWorkerProtoFileVersionEnum(common_config.GetHighestExecutionWorkerProtoFileVersion()),
+				},
+				TestInstructionExecutionUuid:   processTestInstructionExecutionReveredRequest.TestInstruction.TestInstructionExecutionUuid,
+				ExpectedExecutionDuration:      timestamppb.New(timeAtDurationEnd),
+				TestInstructionCanBeReExecuted: false,
+			}
 		}
+
+		return nil, processTestInstructionExecutionResponse, fangEngineRestApiMessageValues
+
 	} else {
-		// Generate duration for Execution:: TODO This is only for test and should be done in another way later
-		rand.Seed(time.Now().UnixNano())
-		min := 180
-		max := 200
-		myRandomNumber := rand.Intn(max-min+1) + min
 
-		executionDuration := time.Second * time.Duration(myRandomNumber)
-		timeAtDurationEnd := time.Now().Add(executionDuration)
+		// Response for reversed streaming
+		if err != nil {
+			// Couldn't convert into FangEngine-messageType
+			timeAtDurationEnd := time.Now()
 
-		// Generate OK response message to Worker
-		processTestInstructionExecutionReversedResponse = &fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReversedResponse{
-			AckNackResponse: &fenixExecutionWorkerGrpcApi.AckNackResponse{
-				AckNack:                      true,
-				Comments:                     "",
-				ErrorCodes:                   nil,
-				ProtoFileVersionUsedByClient: fenixExecutionWorkerGrpcApi.CurrentFenixExecutionWorkerProtoFileVersionEnum(common_config.GetHighestExecutionWorkerProtoFileVersion()),
-			},
-			TestInstructionExecutionUuid:   processTestInstructionExecutionReveredRequest.TestInstruction.TestInstructionExecutionUuid,
-			ExpectedExecutionDuration:      timestamppb.New(timeAtDurationEnd),
-			TestInstructionCanBeReExecuted: false,
+			// Generate response message to Worker, that conversion didn't work out
+			processTestInstructionExecutionReversedResponse = &fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReversedResponse{
+				AckNackResponse: &fenixExecutionWorkerGrpcApi.AckNackResponse{
+					AckNack:                      false,
+					Comments:                     err.Error(),
+					ErrorCodes:                   nil,
+					ProtoFileVersionUsedByClient: fenixExecutionWorkerGrpcApi.CurrentFenixExecutionWorkerProtoFileVersionEnum(common_config.GetHighestExecutionWorkerProtoFileVersion()),
+				},
+				TestInstructionExecutionUuid:   processTestInstructionExecutionReveredRequest.TestInstruction.TestInstructionExecutionUuid,
+				ExpectedExecutionDuration:      timestamppb.New(timeAtDurationEnd),
+				TestInstructionCanBeReExecuted: true,
+			}
+		} else {
+			// Generate duration for Execution:: TODO This is only for test and should be done in another way later
+			rand.Seed(time.Now().UnixNano())
+			min := 180
+			max := 200
+			myRandomNumber := rand.Intn(max-min+1) + min
+
+			executionDuration := time.Second * time.Duration(myRandomNumber)
+			timeAtDurationEnd := time.Now().Add(executionDuration)
+
+			// Generate OK response message to Worker
+			processTestInstructionExecutionReversedResponse = &fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReversedResponse{
+				AckNackResponse: &fenixExecutionWorkerGrpcApi.AckNackResponse{
+					AckNack:                      true,
+					Comments:                     "",
+					ErrorCodes:                   nil,
+					ProtoFileVersionUsedByClient: fenixExecutionWorkerGrpcApi.CurrentFenixExecutionWorkerProtoFileVersionEnum(common_config.GetHighestExecutionWorkerProtoFileVersion()),
+				},
+				TestInstructionExecutionUuid:   processTestInstructionExecutionReveredRequest.TestInstruction.TestInstructionExecutionUuid,
+				ExpectedExecutionDuration:      timestamppb.New(timeAtDurationEnd),
+				TestInstructionCanBeReExecuted: false,
+			}
 		}
+
+		return processTestInstructionExecutionReversedResponse, nil, fangEngineRestApiMessageValues
 	}
-
-	return processTestInstructionExecutionReversedResponse, fangEngineRestApiMessageValues
-
 }
 
 func SendTestInstructionToFangEngineUsingRestCall(fangEngineRestApiMessageValues *restCallsToCAEngine.FangEngineRestApiMessageStruct, processTestInstructionExecutionReveredRequest *fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionReveredRequest) (finalTestInstructionExecutionResultMessage *fenixExecutionWorkerGrpcApi.FinalTestInstructionExecutionResultMessage) {

@@ -13,6 +13,8 @@ type TestInstructionExecutionEngineStruct struct {
 	ongoingTimerOrConnectionForCallingWorkerForTestInstructionsToExecute bool
 }
 
+var TestInstructionExecutionEngine TestInstructionExecutionEngineStruct
+
 // ExecutionEngineCommandChannel, which is references by all parts of the Connector
 var ExecutionEngineCommandChannel ExecutionEngineChannelType
 
