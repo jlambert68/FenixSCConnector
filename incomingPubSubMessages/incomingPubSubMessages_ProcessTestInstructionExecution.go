@@ -106,8 +106,8 @@ func PullPubSubTestInstructionExecutionMessagessages() {
 		cleanedMessageAsByteArray = []byte(cleanedMessage)
 
 		// Convert PubSub-message back into proto-message
-		var processTestInstructionExecutionPubSubRequest *fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionPubSubRequest
-		err = protojson.Unmarshal(cleanedMessageAsByteArray, processTestInstructionExecutionPubSubRequest)
+		var processTestInstructionExecutionPubSubRequest fenixExecutionWorkerGrpcApi.ProcessTestInstructionExecutionPubSubRequest
+		err = protojson.Unmarshal(cleanedMessageAsByteArray, &processTestInstructionExecutionPubSubRequest)
 		if err != nil {
 			common_config.Logger.WithFields(logrus.Fields{
 				"Id":                         "bb8e4c1c-12d9-4d19-b77c-165dd05fd4eb",
