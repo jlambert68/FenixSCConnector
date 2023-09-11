@@ -35,7 +35,8 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendAreYou
 	// Create the message with all test data to be sent to Fenix
 	emptyParameter := &fenixExecutionWorkerGrpcApi.EmptyParameter{
 
-		ProtoFileVersionUsedByClient: fenixExecutionWorkerGrpcApi.CurrentFenixExecutionWorkerProtoFileVersionEnum(common_config.GetHighestExecutionWorkerProtoFileVersion()),
+		ProtoFileVersionUsedByClient: fenixExecutionWorkerGrpcApi.CurrentFenixExecutionWorkerProtoFileVersionEnum(
+			common_config.GetHighestExecutionWorkerProtoFileVersion()),
 	}
 
 	// Do gRPC-call
@@ -49,10 +50,12 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendAreYou
 	}()
 
 	// Only add access token when run on GCP
-	if common_config.ExecutionLocationForFenixExecutionWorkerServer == common_config.GCP && common_config.GCPAuthentication == true {
+	if common_config.ExecutionLocationForFenixExecutionWorkerServer == common_config.GCP &&
+		common_config.GCPAuthentication == true {
 
 		// Add Access token
-		ctx, returnMessageAckNack, returnMessageString = gcp.Gcp.GenerateGCPAccessToken(ctx, gcp.GenerateTokenForGrpcTowardsExecutionWorker)
+		ctx, returnMessageAckNack, returnMessageString = gcp.Gcp.GenerateGCPAccessToken(
+			ctx, gcp.GenerateTokenForGrpcTowardsExecutionWorker)
 		if returnMessageAckNack == false {
 			return false, returnMessageString
 		}

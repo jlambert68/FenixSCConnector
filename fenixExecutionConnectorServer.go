@@ -8,16 +8,37 @@ import (
 	"FenixSCConnector/messagesToExecutionWorkerServer"
 	"fmt"
 	uuidGenerator "github.com/google/uuid"
-	fenixExecutionConnectorGrpcApi "github.com/jlambert68/FenixGrpcApi/FenixExecutionServer/fenixExecutionConnectorGrpcApi/go_grpc_api"
 	"github.com/sirupsen/logrus"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 // Used for only process cleanup once
 var cleanupProcessed = false
 
-func cleanup() {
+func cleanup(stopAliveToWorkerTickerChannel *chan common_config.StopAliveToWorkerTickerChannelStruct) {
 
 	if cleanupProcessed == false {
+
+		// Stop Ticker used when informing Worker that Connector is alive
+		var stopAliveToWorkerTickerChannelMessage common_config.StopAliveToWorkerTickerChannelStruct
+		var returnChannel chan bool
+		returnChannel = make(chan bool)
+
+		stopAliveToWorkerTickerChannelMessage = common_config.StopAliveToWorkerTickerChannelStruct{
+			ReturnChannel: &returnChannel}
+
+		// Send Message twice due to logic in receiver side
+		*stopAliveToWorkerTickerChannel <- stopAliveToWorkerTickerChannelMessage
+		*stopAliveToWorkerTickerChannel <- stopAliveToWorkerTickerChannelMessage
+
+		// Wait for message has been sent to Worker
+		<-returnChannel
+
+		// Inform Worker that Connector is closing down
+		fenixExecutionConnectorObject.TestInstructionExecutionEngine.MessagesToExecutionWorkerObjectReference.ConnectorIsShuttingDown()
 
 		cleanupProcessed = true
 
@@ -58,10 +79,15 @@ func fenixExecutionConnectorMain() {
 	fenixExecutionConnectorObject.logger = common_config.Logger
 
 	// Clean up when leaving. Is placed after logger because shutdown logs information
-	defer cleanup()
+	// Channel is used for syncing messages: "Connector is Ready for Work" vs "Connector is shutting down"
+	var stopSendingAliveToWorkerTickerChannel chan common_config.StopAliveToWorkerTickerChannelStruct
+	stopSendingAliveToWorkerTickerChannel = make(chan common_config.StopAliveToWorkerTickerChannelStruct)
+	defer cleanup(&stopSendingAliveToWorkerTickerChannel)
 
 	// Start up PubSub-receiver
-	go incomingPubSubMessages.PullPubSubTestInstructionExecutionMessagessages()
+	if common_config.UsePubSubToReceiveMessagesFromWorker == true {
+		go incomingPubSubMessages.PullPubSubTestInstructionExecutionMessagessages()
+	}
 
 	// Initiate CommandChannel
 	connectorEngine.ExecutionEngineCommandChannel = make(chan connectorEngine.ChannelCommandStruct)
@@ -73,16 +99,36 @@ func fenixExecutionConnectorMain() {
 	// Initiate  gRPC-server
 	fenixExecutionConnectorObject.GrpcServer.InitiategRPCObject(fenixExecutionConnectorObject.logger)
 
-	// Create Message for CommandChannel to connect to Worker to be able to get TestInstructions to Execute
-	triggerTestInstructionExecutionResultMessage := &fenixExecutionConnectorGrpcApi.TriggerTestInstructionExecutionResultMessage{}
-	channelCommand := connectorEngine.ChannelCommandStruct{
-		ChannelCommand: connectorEngine.ChannelCommandTriggerRequestForTestInstructionExecutionToProcess,
-		ReportCompleteTestInstructionExecutionResultParameter: connectorEngine.ChannelCommandSendReportCompleteTestInstructionExecutionResultToFenixExecutionServerStruct{
-			TriggerTestInstructionExecutionResultMessage: triggerTestInstructionExecutionResultMessage},
-	}
+	/*
+		// Create Message for CommandChannel to connect to Worker to be able to get TestInstructions to Execute
+		triggerTestInstructionExecutionResultMessage := &fenixExecutionConnectorGrpcApi.TriggerTestInstructionExecutionResultMessage{}
+		channelCommand := connectorEngine.ChannelCommandStruct{
+			ChannelCommand: connectorEngine.ChannelCommandTriggerRequestForTestInstructionExecutionToProcess,
+			ReportCompleteTestInstructionExecutionResultParameter: connectorEngine.ChannelCommandSendReportCompleteTestInstructionExecutionResultToFenixExecutionServerStruct{
+				TriggerTestInstructionExecutionResultMessage: triggerTestInstructionExecutionResultMessage},
+		}
 
-	// Send message on channel
-	connectorEngine.ExecutionEngineCommandChannel <- channelCommand
+		// Send message on channel
+		connectorEngine.ExecutionEngineCommandChannel <- channelCommand
+	*/
+
+	// 	Inform Worker that Connector is ready to receive work
+	go func() {
+		// Wait 5 seconds before informing Worker that Connector is ready for Work
+		time.Sleep(5 * time.Second)
+		// Inform Worker that Connector is closing down
+		fenixExecutionConnectorObject.TestInstructionExecutionEngine.MessagesToExecutionWorkerObjectReference.ConnectorIsReadyToReceiveWork(&stopSendingAliveToWorkerTickerChannel)
+
+	}()
+
+	// Wait for 'ctrl c' to exit
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		cleanup(&stopSendingAliveToWorkerTickerChannel)
+		os.Exit(0)
+	}()
 
 	// Start Backend GrpcServer-server
 	fenixExecutionConnectorObject.GrpcServer.InitGrpcServer(fenixExecutionConnectorObject.logger)

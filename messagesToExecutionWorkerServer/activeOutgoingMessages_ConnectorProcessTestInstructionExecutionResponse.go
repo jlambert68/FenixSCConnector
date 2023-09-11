@@ -99,7 +99,7 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendConnec
 				"Message from Fenix Worker": returnMessage.Comments,
 			}).Error("Problem to do gRPC-call to Worker for 'SendConnectorProcessTestInstructionExecutionResponse'")
 
-			return false, err.Error()
+			return false, returnMessage.Comments
 		} else {
 
 			common_config.Logger.WithFields(logrus.Fields{

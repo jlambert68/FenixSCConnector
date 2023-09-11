@@ -15,3 +15,8 @@ const LocalWebServerAddressAndPort = "127.0.0.1:8080"
 
 // Unique 'Uuid' for this running instance. Created at start up. Used as identification
 var ApplicationRunTimeUuid string
+
+// Used when Stopping Ticker for sending info to Worker that Connecotr is Ready, used when doing shut down
+type StopAliveToWorkerTickerChannelStruct struct {
+	ReturnChannel *chan bool
+}

@@ -41,8 +41,10 @@ func (fenixExecutionConnectorGrpcObject *FenixExecutionConnectorGrpcObjectStruct
 
 	// Create server and register the gRPC-service to the server
 	fenixExecutionConnectorGrpcServer = grpc.NewServer()
-	fenixExecutionConnectorGrpcApi.RegisterFenixExecutionConnectorGrpcServicesServer(fenixExecutionConnectorGrpcServer, &fenixExecutionConnectorGrpcServicesServer{
-		logger: logger})
+	fenixExecutionConnectorGrpcApi.RegisterFenixExecutionConnectorGrpcServicesServer(
+		fenixExecutionConnectorGrpcServer,
+		&fenixExecutionConnectorGrpcServicesServer{
+			logger: logger})
 	//	   	CommandChannelReference: commandChannelReference}
 
 	// Register Reflection on the same server to be able for calling agents to see the methods that are offered
@@ -67,14 +69,16 @@ func (fenixExecutionConnectorGrpcObject *FenixExecutionConnectorGrpcObjectStruct
 
 	fenixExecutionConnectorGrpcObject.logger.WithFields(logrus.Fields{
 		"common_config.ExecutionConnectorPort: ": common_config.ExecutionConnectorPort,
-	}).Info("Close net.Listing")
-	err := lis.Close()
-	if err != nil {
-		fenixExecutionConnectorGrpcObject.logger.WithFields(logrus.Fields{
-			"Id":                                   "6385920d-76c7-4139-8b4a-c5e629cf2301",
-			"err: ":                                err,
-			"common_config.ExecutionConnectorPort": common_config.ExecutionConnectorPort,
-		}).Error("Couldn't stop listing on port")
-	}
+	}).Info("Closed gRPC-server")
+	/*
+		err := lis.Close()
+		if err != nil {
+			fenixExecutionConnectorGrpcObject.logger.WithFields(logrus.Fields{
+				"Id":                                   "6385920d-76c7-4139-8b4a-c5e629cf2301",
+				"err: ":                                err,
+				"common_config.ExecutionConnectorPort": common_config.ExecutionConnectorPort,
+			}).Error("Couldn't stop listing on port")
+		}
+	*/
 
 }
