@@ -21,7 +21,7 @@ import (
 
 func PullPubSubTestInstructionExecutionMessagessages() {
 	projectID := common_config.GcpProject
-	subID := "SubCustody-ProcessTestInstructionExecutionRequest-sub"
+	subID := generatePubSubTopicSubscriptionNameForExecutionStatusUpdates()
 
 	var pubSubClient *pubsub.Client
 	var err error

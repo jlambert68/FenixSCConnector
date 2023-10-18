@@ -21,20 +21,22 @@ const (
 
 // Address to Fenix Execution Worker & Execution Connector, will have their values from Environment variables at startup
 var (
-	FenixExecutionWorkerAddress          string
-	FenixExecutionWorkerPort             int
-	FenixExecutionWorkerAddressToDial    string
-	ExecutionConnectorPort               int
-	GCPAuthentication                    bool
-	CAEngineAddress                      string
-	CAEngineAddressPath                  string
-	UseInternalWebServerForTest          bool
-	UseServiceAccount                    bool
-	ApplicationShouldRunInTray           bool
-	TurnOffCallToWorker                  bool
-	AuthClientId                         string
-	AuthClientSecret                     string
-	GcpProject                           string
-	UsePubSubToReceiveMessagesFromWorker bool
-	LocalServiceAccountPath              string
+	FenixExecutionWorkerAddress             string
+	FenixExecutionWorkerPort                int
+	FenixExecutionWorkerAddressToDial       string
+	ExecutionConnectorPort                  int
+	GCPAuthentication                       bool
+	CAEngineAddress                         string
+	CAEngineAddressPath                     string
+	UseInternalWebServerForTest             bool
+	UseServiceAccount                       bool
+	ApplicationShouldRunInTray              bool
+	TurnOffCallToWorker                     bool
+	AuthClientId                            string
+	AuthClientSecret                        string
+	GcpProject                              string
+	UsePubSubToReceiveMessagesFromWorker    bool
+	LocalServiceAccountPath                 string
+	TestInstructionExecutionPubSubTopicBase string
+	ThisDomainsUuid                         string
 )
