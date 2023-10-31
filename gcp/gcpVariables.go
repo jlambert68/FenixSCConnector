@@ -7,11 +7,16 @@ import (
 )
 
 type GcpObjectStruct struct {
-	logger                                    *logrus.Logger
-	gcpAccessTokenForServiceAccounts          *oauth2.Token
-	gcpAccessTokenForAuthorizedAccounts       goth.User
-	gcpAccessTokenForServiceAccountsPubSub    *oauth2.Token
-	gcpAccessTokenForAuthorizedAccountsPubSub goth.User
+	logger                                 *logrus.Logger
+	gcpAccessTokenForServiceAccounts       *oauth2.Token
+	gcpAccessTokenForAuthorizedAccounts    goth.User
+	gcpAccessTokenForServiceAccountsPubSub *oauth2.Token
+
+	gcpAccessTokenForAuthorizedAccountsPubSub           goth.User
+	gcpAccessTokenForAuthorizedAccountsPubSubOath2Token *oauth2.Token
+
+	// The following token is received from Worker, needs to be this due to the setup at SEB
+	GcpAccessTokenFromWorkerToBeUsedWithPubSub string
 }
 
 var Gcp GcpObjectStruct

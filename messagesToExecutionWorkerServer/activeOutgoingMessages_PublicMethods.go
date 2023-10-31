@@ -2,13 +2,19 @@ package messagesToExecutionWorkerServer
 
 import (
 	"FenixSCConnector/common_config"
+	"FenixSCConnector/gcp"
+	"fmt"
 	fenixExecutionWorkerGrpcApi "github.com/jlambert68/FenixGrpcApi/FenixExecutionServer/fenixExecutionWorkerGrpcApi/go_grpc_api"
 	"github.com/jlambert68/FenixTestInstructionsDataAdmin/Domains"
 	"github.com/sirupsen/logrus"
 	"time"
 )
 
-func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) ConnectorIsReadyToReceiveWork(stopSending *chan common_config.StopAliveToWorkerTickerChannelStruct) {
+func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) ConnectorIsReadyToReceiveWork(
+	stopSending *chan common_config.StopAliveToWorkerTickerChannelStruct,
+	accessTokenReceivedChannelPtr *chan bool) {
+
+	accessTokenReceivedChannel := *accessTokenReceivedChannelPtr
 
 	common_config.Logger.WithFields(logrus.Fields{
 		"id": "0c8aa2a2-6f3a-478e-95c8-352f28dfe488",
@@ -29,6 +35,7 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) ConnectorI
 		ConnectorIsReady: fenixExecutionWorkerGrpcApi.ConnectorIsReadyEnum_CONNECTOR_IS_READY_TO_RECEIVE_WORK,
 	}
 
+	// Set up ticker to send I'm alive to Worker
 	ticker := time.NewTicker(15 * time.Second)
 
 	// Send a Message to Worker that Connector is Ready, every 15 seconds until program exists
@@ -37,6 +44,15 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) ConnectorI
 
 	// Call Worker to start with
 	toExecutionWorkerObject.SendConnectorInformsItIsAlive(connectorIsReadyMessage)
+	fmt.Println("Hehhehheh")
+	fmt.Println(len(gcp.Gcp.GcpAccessTokenFromWorkerToBeUsedWithPubSub))
+	// If an access token was return then start PubSub subscription receiver
+	if len(gcp.Gcp.GcpAccessTokenFromWorkerToBeUsedWithPubSub) > 0 {
+		accessTokenReceivedChannel <- true
+	} else {
+		accessTokenReceivedChannel <- false
+	}
+	fmt.Println(len(gcp.Gcp.GcpAccessTokenFromWorkerToBeUsedWithPubSub))
 
 	for {
 		select {

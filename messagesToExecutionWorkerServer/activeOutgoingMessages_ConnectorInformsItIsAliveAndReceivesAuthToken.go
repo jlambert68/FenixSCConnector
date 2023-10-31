@@ -4,6 +4,7 @@ import (
 	"FenixSCConnector/common_config"
 	"FenixSCConnector/gcp"
 	"context"
+	"fmt"
 	fenixExecutionWorkerGrpcApi "github.com/jlambert68/FenixGrpcApi/FenixExecutionServer/fenixExecutionWorkerGrpcApi/go_grpc_api"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -22,6 +23,11 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendConnec
 			"id": "a682cce6-4e88-4613-8d14-f579c994b4bf",
 		}).Debug("Outgoing 'SendConnectorInformsItIsAlive'")
 	*/
+
+	// Before exiting
+	defer func() {
+
+	}()
 
 	var ctx context.Context
 	var returnMessageAckNack bool
@@ -64,7 +70,9 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendConnec
 	//md2 := MetadataFromHeaders(headers)
 	//myctx := metadata.NewOutgoingContext(ctx, md2)
 
-	returnMessage, err := fenixExecutionWorkerGrpcClient.ConnectorInformsItIsAlive(ctx, connectorIsReadyMessage)
+	var connectorIsReadyResponseMessage *fenixExecutionWorkerGrpcApi.ConnectorIsReadyResponseMessage
+	connectorIsReadyResponseMessage, err = fenixExecutionWorkerGrpcClient.ConnectorInformsItIsAlive(
+		ctx, connectorIsReadyMessage)
 
 	// Shouldn't happen
 	if err != nil {
@@ -75,15 +83,20 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendConnec
 
 		return
 
-	} else if returnMessage.AckNack == false {
+	} else if connectorIsReadyResponseMessage.AckNackResponse.AckNack == false {
 		// FenixTestDataSyncServer couldn't handle gPRC call
 		common_config.Logger.WithFields(logrus.Fields{
 			"ID":                                  "6fcf35a5-6a8f-4b3c-a2a0-e00c9d594c73",
-			"Message from Fenix Execution Server": returnMessage.Comments,
+			"Message from Fenix Execution Server": connectorIsReadyResponseMessage.AckNackResponse.Comments,
 		}).Error("Problem to do gRPC-call to FenixExecutionWorker for 'SendConnectorInformsItIsAlive'")
 
 		return
 	}
+
+	// Store Access token to be used when doing PubSub-subscriptions
+	gcp.Gcp.GcpAccessTokenFromWorkerToBeUsedWithPubSub = connectorIsReadyResponseMessage.GetPubSubAuthorizationToken()
+
+	fmt.Println(connectorIsReadyResponseMessage.GetPubSubAuthorizationToken())
 
 	return
 

@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/toqueteos/webbrowser"
 	"golang.org/x/net/context"
+	"golang.org/x/oauth2"
 	"google.golang.org/api/idtoken"
 	grpcMetadata "google.golang.org/grpc/metadata"
 	"html/template"
@@ -27,6 +28,7 @@ type GenerateTokenTargetType int
 const (
 	GenerateTokenForGrpcTowardsExecutionWorker GenerateTokenTargetType = iota
 	GenerateTokenForPubSub
+	GetTokenFromWorkerForPubSub
 )
 
 func (gcp *GcpObjectStruct) GenerateGCPAccessToken(ctx context.Context, tokenTarget GenerateTokenTargetType) (appendedCtx context.Context, returnAckNack bool, returnMessage string) {
@@ -58,6 +60,14 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessToken(ctx context.Context, tokenTar
 			// Use Authorized user
 			appendedCtx, returnAckNack, returnMessage = gcp.generateGCPAccessTokenPubSub(ctx)
 		}
+
+	case GetTokenFromWorkerForPubSub:
+		// When Worker is run in SEB-GCP, the Worker will give the Connector the token to use
+		// The reason is probably the setup for SEB in GCP
+		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.GcpAccessTokenFromWorkerToBeUsedWithPubSub)
+		returnAckNack = true
+		returnMessage = ""
+
 	}
 	return appendedCtx, returnAckNack, returnMessage
 
@@ -285,7 +295,7 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx co
 	timeToCompareTo := time.Now().Add(-time.Minute * 5)
 	if !(gcp.gcpAccessTokenForAuthorizedAccountsPubSub.IDToken == "" || gcp.gcpAccessTokenForAuthorizedAccountsPubSub.ExpiresAt.Before(timeToCompareTo)) {
 		// We already have a ID-token that can be used, so return that
-		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForAuthorizedAccountsPubSub.IDToken)
+		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForAuthorizedAccountsPubSub.AccessToken)
 
 		return appendedCtx, true, ""
 	}
@@ -329,6 +339,16 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx co
 
 		// Save ID-token
 		gcp.gcpAccessTokenForAuthorizedAccountsPubSub = user
+
+		// Save as oauth2.Token
+		var tempAauth2Token *oauth2.Token
+		tempAauth2Token = &oauth2.Token{
+			AccessToken:  user.AccessToken,
+			TokenType:    "Bearer",
+			RefreshToken: user.RefreshToken,
+			Expiry:       user.ExpiresAt,
+		}
+		gcp.gcpAccessTokenForAuthorizedAccountsPubSubOath2Token = tempAauth2Token
 
 		// Trigger Close of Web Server, and 'true' means that a ID-to
 		DoneChannel <- true
@@ -375,7 +395,7 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx co
 	// Depending on the outcome of getting a token return different results
 	if gotIdTokenResult == true {
 		// Success in getting an ID-token
-		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForAuthorizedAccountsPubSub.IDToken)
+		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForAuthorizedAccountsPubSub.AccessToken)
 
 		return appendedCtx, true, ""
 	} else {
@@ -383,6 +403,10 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx co
 		return nil, false, "Couldn't generate access token"
 	}
 
+}
+
+func (gcp *GcpObjectStruct) GetGcpAccessTokenForAuthorizedAccountsPubSub() string {
+	return gcp.gcpAccessTokenForAuthorizedAccountsPubSub.AccessToken
 }
 
 // Start and run Local Web Server

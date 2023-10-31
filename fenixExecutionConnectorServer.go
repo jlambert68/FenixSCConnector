@@ -84,11 +84,6 @@ func fenixExecutionConnectorMain() {
 	stopSendingAliveToWorkerTickerChannel = make(chan common_config.StopAliveToWorkerTickerChannelStruct)
 	defer cleanup(&stopSendingAliveToWorkerTickerChannel)
 
-	// Start up PubSub-receiver
-	if common_config.UsePubSubToReceiveMessagesFromWorker == true {
-		go incomingPubSubMessages.PullPubSubTestInstructionExecutionMessagessages()
-	}
-
 	// Initiate CommandChannel
 	connectorEngine.ExecutionEngineCommandChannel = make(chan connectorEngine.ChannelCommandStruct)
 
@@ -112,14 +107,24 @@ func fenixExecutionConnectorMain() {
 		connectorEngine.ExecutionEngineCommandChannel <- channelCommand
 	*/
 
+	// Channel for informing that an access token was received
+	var accessTokenWasReceivedChannel chan bool
+	accessTokenWasReceivedChannel = make(chan bool)
+
 	// 	Inform Worker that Connector is ready to receive work
 	go func() {
 		// Wait 5 seconds before informing Worker that Connector is ready for Work
 		time.Sleep(5 * time.Second)
 		// Inform Worker that Connector is closing down
-		fenixExecutionConnectorObject.TestInstructionExecutionEngine.MessagesToExecutionWorkerObjectReference.ConnectorIsReadyToReceiveWork(&stopSendingAliveToWorkerTickerChannel)
+		fenixExecutionConnectorObject.TestInstructionExecutionEngine.MessagesToExecutionWorkerObjectReference.
+			ConnectorIsReadyToReceiveWork(&stopSendingAliveToWorkerTickerChannel, &accessTokenWasReceivedChannel)
 
 	}()
+
+	// Start up PubSub-receiver
+	if common_config.UsePubSubToReceiveMessagesFromWorker == true {
+		go incomingPubSubMessages.PullPubSubTestInstructionExecutionMessages(&accessTokenWasReceivedChannel)
+	}
 
 	// Wait for 'ctrl c' to exit
 	c := make(chan os.Signal)
