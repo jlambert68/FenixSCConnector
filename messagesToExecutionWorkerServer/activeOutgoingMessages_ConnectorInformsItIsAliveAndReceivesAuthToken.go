@@ -4,7 +4,6 @@ import (
 	"FenixSCConnector/common_config"
 	"FenixSCConnector/gcp"
 	"context"
-	"fmt"
 	fenixExecutionWorkerGrpcApi "github.com/jlambert68/FenixGrpcApi/FenixExecutionServer/fenixExecutionWorkerGrpcApi/go_grpc_api"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -59,7 +58,7 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendConnec
 
 		// Add Access token
 		ctx, returnMessageAckNack, _ = gcp.Gcp.GenerateGCPAccessToken(
-			ctx, gcp.GenerateTokenForGrpcTowardsExecutionWorker)
+			ctx, gcp.GetTokenForGrpcAndPubSub)
 		if returnMessageAckNack == false {
 			return
 		}
@@ -95,8 +94,6 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendConnec
 
 	// Store Access token to be used when doing PubSub-subscriptions
 	gcp.Gcp.GcpAccessTokenFromWorkerToBeUsedWithPubSub = connectorIsReadyResponseMessage.GetPubSubAuthorizationToken()
-
-	fmt.Println(connectorIsReadyResponseMessage.GetPubSubAuthorizationToken())
 
 	return
 

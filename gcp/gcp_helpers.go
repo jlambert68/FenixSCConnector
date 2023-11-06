@@ -29,6 +29,7 @@ const (
 	GenerateTokenForGrpcTowardsExecutionWorker GenerateTokenTargetType = iota
 	GenerateTokenForPubSub
 	GetTokenFromWorkerForPubSub
+	GetTokenForGrpcAndPubSub
 )
 
 func (gcp *GcpObjectStruct) GenerateGCPAccessToken(ctx context.Context, tokenTarget GenerateTokenTargetType) (appendedCtx context.Context, returnAckNack bool, returnMessage string) {
@@ -50,7 +51,7 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessToken(ctx context.Context, tokenTar
 		}
 
 	case GenerateTokenForPubSub:
-		// Only use Authorized used when running locally and ExecutionServer is in GCP
+		// Only use Authorized used when running locally and WorkerServer is on GCP
 		if common_config.ExecutionLocationForConnector == common_config.LocalhostNoDocker {
 
 			// Use Authorized user when targeting GCP from local
@@ -67,6 +68,18 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessToken(ctx context.Context, tokenTar
 		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.GcpAccessTokenFromWorkerToBeUsedWithPubSub)
 		returnAckNack = true
 		returnMessage = ""
+
+	case GetTokenForGrpcAndPubSub:
+		// Only use Authorized used when running locally and WorkerServer is on GCP
+		if common_config.ExecutionLocationForConnector == common_config.LocalhostNoDocker {
+
+			// Use Authorized user when targeting GCP from local
+			appendedCtx, returnAckNack, returnMessage = gcp.GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx)
+
+		} else {
+			// Use Authorized user
+			appendedCtx, returnAckNack, returnMessage = gcp.generateGCPAccessTokenPubSub(ctx)
+		}
 
 	}
 	return appendedCtx, returnAckNack, returnMessage
@@ -295,7 +308,7 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx co
 	timeToCompareTo := time.Now().Add(-time.Minute * 5)
 	if !(gcp.gcpAccessTokenForAuthorizedAccountsPubSub.IDToken == "" || gcp.gcpAccessTokenForAuthorizedAccountsPubSub.ExpiresAt.Before(timeToCompareTo)) {
 		// We already have a ID-token that can be used, so return that
-		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForAuthorizedAccountsPubSub.AccessToken)
+		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForAuthorizedAccountsPubSub.IDToken)
 
 		return appendedCtx, true, ""
 	}
@@ -320,7 +333,7 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx co
 			common_config.AuthClientId,
 			common_config.AuthClientSecret,
 			"http://localhost:3000/auth/google/callback",
-			"email", "https://www.googleapis.com/auth/pubsub"),
+			"email", "profile", "https://www.googleapis.com/auth/pubsub"),
 	)
 
 	router := pat.New()
@@ -395,7 +408,7 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx co
 	// Depending on the outcome of getting a token return different results
 	if gotIdTokenResult == true {
 		// Success in getting an ID-token
-		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForAuthorizedAccountsPubSub.AccessToken)
+		appendedCtx = grpcMetadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+gcp.gcpAccessTokenForAuthorizedAccountsPubSub.IDToken)
 
 		return appendedCtx, true, ""
 	} else {
@@ -439,7 +452,7 @@ func (gcp *GcpObjectStruct) stopLocalWebServer(ctx context.Context, webServer *h
 		"ID": "1f4e0354-2a09-4a1d-be61-67ecda781142",
 	}).Debug("Trying to stop local web server")
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
 	err := webServer.Shutdown(ctx)

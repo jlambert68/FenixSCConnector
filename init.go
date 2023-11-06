@@ -20,10 +20,17 @@ func mustGetenv(environmentVariableName string) string {
 		// Extract environment variables from parameters feed into program at compilation time
 
 		switch environmentVariableName {
-		case "RunInTray":
-			environmentVariable = runInTray
-		case "LoggingLevel":
-			environmentVariable = loggingLevel
+		case "AuthClientId":
+			environmentVariable = authClientId
+
+		case "AuthClientSecret":
+			environmentVariable = authClientSecret
+
+		case "CAEngineAddress":
+			environmentVariable = cAEngineAddress
+
+		case "CAEngineAddressPath":
+			environmentVariable = cAEngineAddressPath
 
 		case "ExecutionConnectorPort":
 			environmentVariable = executionConnectorPort
@@ -41,22 +48,37 @@ func mustGetenv(environmentVariableName string) string {
 			environmentVariable = executionWorkerPort
 
 		case "GCPAuthentication":
-			environmentVariable = gcpAuthentication
+			environmentVariable = gCPAuthentication
 
-		case "CAEngineAddress":
-			environmentVariable = caEngineAddress
+		case "GcpProject":
+			environmentVariable = gcpProject
 
-		case "CAEngineAddressPath":
-			environmentVariable = caEngineAddressPath
+		case "LocalServiceAccountPath":
+			environmentVariable = localServiceAccountPath
+
+		case "LoggingLevel":
+			environmentVariable = loggingLevel
+
+		case "RunInTray":
+			environmentVariable = runInTray
+
+		case "TestInstructionExecutionPubSubTopicBase":
+			environmentVariable = testInstructionExecutionPubSubTopicBase
+
+		case "ThisDomainsUuid":
+			environmentVariable = thisDomainsUuid
+
+		case "TurnOffCallToWorker":
+			environmentVariable = turnOffCallToWorker
 
 		case "UseInternalWebServerForTest":
 			environmentVariable = useInternalWebServerForTest
 
+		case "UsePubSubToReceiveMessagesFromWorker":
+			environmentVariable = usePubSubToReceiveMessagesFromWorker
+
 		case "UseServiceAccount":
 			environmentVariable = useServiceAccount
-
-		case "TurnOffCallToWorker":
-			environmentVariable = turnOffCallToWorker
 
 		default:
 			log.Fatalf("Warning: %s environment variable not among injected variables.\n", environmentVariableName)
@@ -81,19 +103,27 @@ func mustGetenv(environmentVariableName string) string {
 // Variables injected at compilation time
 var (
 	useInjectedEnvironmentVariables string
-	runInTray                       string
-	loggingLevel                    string
-	executionConnectorPort          string
-	executionLocationForConnector   string
-	executionLocationForWorker      string
-	executionWorkerAddress          string
-	executionWorkerPort             string
-	gcpAuthentication               string
-	caEngineAddress                 string
-	caEngineAddressPath             string
-	useInternalWebServerForTest     string
-	useServiceAccount               string
-	turnOffCallToWorker             string
+
+	authClientId                            string
+	authClientSecret                        string
+	cAEngineAddress                         string
+	cAEngineAddressPath                     string
+	executionConnectorPort                  string
+	executionLocationForConnector           string
+	executionLocationForWorker              string
+	executionWorkerAddress                  string
+	executionWorkerPort                     string
+	gCPAuthentication                       string
+	gcpProject                              string
+	localServiceAccountPath                 string
+	loggingLevel                            string
+	runInTray                               string
+	testInstructionExecutionPubSubTopicBase string
+	thisDomainsUuid                         string
+	turnOffCallToWorker                     string
+	useInternalWebServerForTest             string
+	usePubSubToReceiveMessagesFromWorker    string
+	useServiceAccount                       string
 )
 
 func dumpMap(space string, m map[string]interface{}) {

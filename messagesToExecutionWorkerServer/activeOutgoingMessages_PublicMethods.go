@@ -3,7 +3,6 @@ package messagesToExecutionWorkerServer
 import (
 	"FenixSCConnector/common_config"
 	"FenixSCConnector/gcp"
-	"fmt"
 	fenixExecutionWorkerGrpcApi "github.com/jlambert68/FenixGrpcApi/FenixExecutionServer/fenixExecutionWorkerGrpcApi/go_grpc_api"
 	"github.com/jlambert68/FenixTestInstructionsDataAdmin/Domains"
 	"github.com/sirupsen/logrus"
@@ -44,15 +43,12 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) ConnectorI
 
 	// Call Worker to start with
 	toExecutionWorkerObject.SendConnectorInformsItIsAlive(connectorIsReadyMessage)
-	fmt.Println("Hehhehheh")
-	fmt.Println(len(gcp.Gcp.GcpAccessTokenFromWorkerToBeUsedWithPubSub))
 	// If an access token was return then start PubSub subscription receiver
 	if len(gcp.Gcp.GcpAccessTokenFromWorkerToBeUsedWithPubSub) > 0 {
 		accessTokenReceivedChannel <- true
 	} else {
 		accessTokenReceivedChannel <- false
 	}
-	fmt.Println(len(gcp.Gcp.GcpAccessTokenFromWorkerToBeUsedWithPubSub))
 
 	for {
 		select {

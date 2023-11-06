@@ -209,9 +209,11 @@ func PullPubSubTestInstructionExecutionMessages(accessTokenReceivedChannelPtr *c
 	config, err := clientSubscription.Config(ctx)
 	fmt.Println(config, err)
 
+	var numberOfMessagesInPullResponse int
+
 	for {
 
-		err = retrivePubSubMessages(subID, gcp.Gcp.GetGcpAccessTokenForAuthorizedAccountsPubSub())
+		numberOfMessagesInPullResponse, err = retrievePubSubMessagesViaRestApi(subID, gcp.Gcp.GetGcpAccessTokenForAuthorizedAccountsPubSub())
 
 		if err != nil {
 
@@ -222,8 +224,12 @@ func PullPubSubTestInstructionExecutionMessages(accessTokenReceivedChannelPtr *c
 
 		}
 
-		// Wait 15 seconds before looking for more PubSub-messages
-		time.Sleep(15 * time.Second)
+		// If there are more than zero messages then don't wait
+		if numberOfMessagesInPullResponse == 0 {
+			// Wait 15 seconds before looking for more PubSub-messages
+			time.Sleep(15 * time.Second)
+		}
+
 	}
 	/*
 		var received int32

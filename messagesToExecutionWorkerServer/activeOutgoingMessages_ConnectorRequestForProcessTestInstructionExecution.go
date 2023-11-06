@@ -62,7 +62,7 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) InitiateCo
 	if common_config.ExecutionLocationForFenixExecutionWorkerServer == common_config.GCP && common_config.GCPAuthentication == true {
 
 		// Add Access token
-		ctx, returnMessageAckNack, _ = gcp.Gcp.GenerateGCPAccessToken(ctx, gcp.GenerateTokenForGrpcTowardsExecutionWorker)
+		ctx, returnMessageAckNack, _ = gcp.Gcp.GenerateGCPAccessToken(ctx, gcp.GetTokenForGrpcAndPubSub)
 		if returnMessageAckNack == false {
 			return
 		}

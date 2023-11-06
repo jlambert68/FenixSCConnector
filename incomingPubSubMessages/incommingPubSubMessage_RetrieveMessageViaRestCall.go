@@ -12,13 +12,17 @@ import (
 )
 
 const (
-	googlePubsubURL = "https://pubsub.googleapis.com/v1/projects/%s/subscriptions/%s:pull"
+	googlePubSubPullURL        = "https://pubsub.googleapis.com/v1/projects/%s/subscriptions/%s:pull"
+	googlePubSubPullAckURL     = "https://pubsub.googleapis.com/v1/projects/%s/subscriptions/%s:acknowledge"
+	numberOfMessagesToBePulled = 10
 )
 
+// The Pubsub-Pull Request
 type pullRequest struct {
 	MaxMessages int `json:"maxMessages"`
 }
 
+// The PubSub-Pull Response
 type pullResponse struct {
 	ReceivedMessages []struct {
 		AckID   string `json:"ackId"`
@@ -28,10 +32,11 @@ type pullResponse struct {
 	} `json:"receivedMessages"`
 }
 
-func retrivePubSubMessages(subscriptionID string, oauth2Token string) (err error) {
-	url := fmt.Sprintf(googlePubsubURL, common_config.GcpProject, subscriptionID)
+// Pull a maximum of 'numberOfMessagesToBePulled' from PubSub-subscription
+func retrievePubSubMessagesViaRestApi(subscriptionID string, oauth2Token string) (numberOfMessagesInPullResponse int, err error) {
+	url := fmt.Sprintf(googlePubSubPullURL, common_config.GcpProject, subscriptionID)
 	body := &pullRequest{
-		MaxMessages: 10, // Number of messages you want to pull
+		MaxMessages: numberOfMessagesToBePulled, // Number of messages you want to pull
 	}
 
 	bodyBytes, _ := json.Marshal(body)
@@ -50,7 +55,7 @@ func retrivePubSubMessages(subscriptionID string, oauth2Token string) (err error
 			"err": err,
 		}).Error("Error making request:")
 
-		return err
+		return numberOfMessagesInPullResponse, err
 	}
 	defer resp.Body.Close()
 
@@ -65,7 +70,7 @@ func retrivePubSubMessages(subscriptionID string, oauth2Token string) (err error
 			"string(bodyBytes)": string(bodyBytes),
 		}).Error("Non http.StatsOK was received:")
 
-		return errors.New(resp.Status)
+		return numberOfMessagesInPullResponse, errors.New(resp.Status)
 	}
 
 	var response pullResponse
@@ -78,10 +83,14 @@ func retrivePubSubMessages(subscriptionID string, oauth2Token string) (err error
 			"err": err,
 		}).Error("Error decoding response:")
 
-		return errors.New(fmt.Sprintf("Error decoding response: %s", err.Error()))
+		return numberOfMessagesInPullResponse, errors.New(fmt.Sprintf("Error decoding response: %s", err.Error()))
 
 	}
 
+	// Get the number of messages in the response
+	numberOfMessagesInPullResponse = len(response.ReceivedMessages)
+
+	// Loop all responses and trigger execution of the TestInstructionExecutions
 	for _, message := range response.ReceivedMessages {
 
 		common_config.Logger.WithFields(logrus.Fields{
@@ -96,7 +105,7 @@ func retrivePubSubMessages(subscriptionID string, oauth2Token string) (err error
 			if err == nil {
 
 				// Acknowledge the message
-				err = acknowledgeMessage(common_config.GcpProject, subscriptionID, message.AckID, oauth2Token)
+				err = sendAcknowledgeMessageViaRestApi(common_config.GcpProject, subscriptionID, message.AckID, oauth2Token)
 
 				if err != nil {
 
@@ -125,27 +134,34 @@ func retrivePubSubMessages(subscriptionID string, oauth2Token string) (err error
 
 	}
 
-	return err
+	return numberOfMessagesInPullResponse, err
 }
 
+// The Pubsub-Subscription-Ack Request
 type ackRequest struct {
 	AckIds []string `json:"ackIds"`
 }
 
-func acknowledgeMessage(projectID string, subscriptionID string, ackID string, oauth2Token string) error {
-	url := fmt.Sprintf(googlePubsubURL, projectID, subscriptionID)
+// Send Acknowledge for one message, which was Pulled and execution was successful
+func sendAcknowledgeMessageViaRestApi(projectID string, subscriptionID string, ackID string, oauth2Token string) error {
+	url := fmt.Sprintf(googlePubSubPullAckURL, projectID, subscriptionID)
 
-	body := &ackRequest{
+	var ackRequestBody *ackRequest
+	ackRequestBody = &ackRequest{
 		AckIds: []string{ackID},
 	}
 
-	bodyBytes, _ := json.Marshal(body)
-	req, _ := http.NewRequest("POST", url+":acknowledge", bytes.NewBuffer(bodyBytes))
-	req.Header.Set("Authorization", "Bearer "+oauth2Token)
-	req.Header.Set("Content-Type", "application/json")
+	// Prepare Acknowledge Message
+	bodyBytes, _ := json.Marshal(ackRequestBody)
+	var acknowledgeRequest *http.Request
+	acknowledgeRequest, _ = http.NewRequest("POST", url, bytes.NewBuffer(bodyBytes))
+	acknowledgeRequest.Header.Set("Authorization", "Bearer "+oauth2Token)
+	acknowledgeRequest.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	// Send Acknowledge Request
+	var client *http.Client
+	client = &http.Client{}
+	resp, err := client.Do(acknowledgeRequest)
 	if err != nil {
 		return err
 	}

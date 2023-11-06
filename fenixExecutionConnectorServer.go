@@ -123,7 +123,7 @@ func fenixExecutionConnectorMain() {
 
 	// Start up PubSub-receiver
 	if common_config.UsePubSubToReceiveMessagesFromWorker == true {
-		go incomingPubSubMessages.PullPubSubTestInstructionExecutionMessages(&accessTokenWasReceivedChannel)
+		go incomingPubSubMessages.PullPubSubTestInstructionExecutionMessagesGcpRestApi(&accessTokenWasReceivedChannel)
 	}
 
 	// Wait for 'ctrl c' to exit
