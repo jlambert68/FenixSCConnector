@@ -3,6 +3,7 @@ package incomingPubSubMessages
 import (
 	"FenixSCConnector/common_config"
 	"FenixSCConnector/gcp"
+	"context"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -63,25 +64,45 @@ func PullPubSubTestInstructionExecutionMessagesGcpRestApi(accessTokenReceivedCha
 	// Create a loop to be able to have a continuous PubSub Subscription Engine
 	var numberOfMessagesInPullResponse int
 	var err error
+	var returnAckNack bool
+	var returnMessage string
+	var ctx context.Context
+
+	ctx = context.Background()
 
 	for {
 
-		// Pull a certain number of messages from Subscription
-		numberOfMessagesInPullResponse, err = retrievePubSubMessagesViaRestApi(subID, gcp.Gcp.GetGcpAccessTokenForAuthorizedAccountsPubSub())
+		// Generate a new token is needed
+		_, returnAckNack, returnMessage = gcp.Gcp.GenerateGCPAccessToken(ctx, gcp.GenerateTokenForPubSub)
+		if returnAckNack == false {
 
-		if err != nil {
+			// Set to zero because we need some waiting time
+			numberOfMessagesInPullResponse = 0
 
 			common_config.Logger.WithFields(logrus.Fields{
-				"ID":  "856533ec-5ba9-46ff-b8c5-af7f3a9da2ac",
-				"err": err,
-			}).Fatalln("PubSub receiver for TestInstructionExecutions ended, which is not intended")
+				"id":            "4d4f1144-a905-4b3c-8d71-ef533eea514c",
+				"returnMessage": returnMessage,
+			}).Debug("Problem when generating a new token. Waiting some time before next try")
 
-		}
+		} else {
 
-		// If there are more than zero messages then don't wait
-		if numberOfMessagesInPullResponse == 0 {
-			// Wait 15 seconds before looking for more PubSub-messages
-			time.Sleep(5 * time.Second)
+			// Pull a certain number of messages from Subscription
+			numberOfMessagesInPullResponse, err = retrievePubSubMessagesViaRestApi(subID, gcp.Gcp.GetGcpAccessTokenForAuthorizedAccountsPubSub())
+
+			if err != nil {
+
+				common_config.Logger.WithFields(logrus.Fields{
+					"ID":  "32cdeb33-26a0-480d-98f9-ce06d13bb8aa",
+					"err": err,
+				}).Fatalln("PubSub receiver for TestInstructionExecutions ended, which is not intended")
+
+			}
+
+			// If there are more than zero messages then don't wait
+			if numberOfMessagesInPullResponse == 0 {
+				// Wait 15 seconds before looking for more PubSub-messages
+				time.Sleep(5 * time.Second)
+			}
 		}
 
 	}

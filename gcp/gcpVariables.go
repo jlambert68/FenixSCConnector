@@ -12,8 +12,9 @@ type GcpObjectStruct struct {
 	gcpAccessTokenForAuthorizedAccounts    goth.User
 	gcpAccessTokenForServiceAccountsPubSub *oauth2.Token
 
-	gcpAccessTokenForAuthorizedAccountsPubSub           goth.User
-	gcpAccessTokenForAuthorizedAccountsPubSubOath2Token *oauth2.Token
+	gcpAccessTokenForAuthorizedAccountsPubSub goth.User
+
+	refreshTokenResponse *RefreshTokenResponse
 
 	// The following token is received from Worker, needs to be this due to the setup at SEB
 	GcpAccessTokenFromWorkerToBeUsedWithPubSub string
