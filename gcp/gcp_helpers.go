@@ -331,7 +331,7 @@ func (gcp *GcpObjectStruct) GenerateGCPAccessTokenForAuthorizedUserPubSub(ctx co
 	// Only create the token if there is none, or it has expired (or 5 minutes before expiration
 	var safetyDuration time.Duration
 	var timeToCompareTo time.Time
-	safetyDuration = -58 * time.Minute
+	safetyDuration = -5 * time.Minute
 	if gcp.gcpAccessTokenForAuthorizedAccountsPubSub.IDToken != "" {
 
 		timeToCompareTo = gcp.refreshTokenResponse.ExpiresAt.Add(safetyDuration)
