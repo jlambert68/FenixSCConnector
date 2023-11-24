@@ -23,7 +23,6 @@ func PullPubSubTestInstructionExecutionMessagesGcpRestApi(accessTokenReceivedCha
 	}).Debug("Outgoing 'PullPubSubTestInstructionExecutionMessagesGcpRestApi'")
 
 	// Before Starting PubSub-receiver secure that an access token has been received
-
 	for {
 		var accessTokenReceived bool
 		accessTokenReceived = <-accessTokenReceivedChannel

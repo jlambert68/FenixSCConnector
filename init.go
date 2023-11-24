@@ -80,6 +80,9 @@ func mustGetenv(environmentVariableName string) string {
 		case "UseServiceAccount":
 			environmentVariable = useServiceAccount
 
+		case "UseNativeGcpPubSubClientLibrary":
+			environmentVariable = useNativeGcpPubSubClientLibrary
+
 		default:
 			log.Fatalf("Warning: %s environment variable not among injected variables.\n", environmentVariableName)
 
@@ -124,6 +127,7 @@ var (
 	useInternalWebServerForTest             string
 	usePubSubToReceiveMessagesFromWorker    string
 	useServiceAccount                       string
+	useNativeGcpPubSubClientLibrary         string
 )
 
 func dumpMap(space string, m map[string]interface{}) {
@@ -288,5 +292,12 @@ func init() {
 
 	// Extract environment variable for 'ThisDomainsUuid'
 	common_config.ThisDomainsUuid = mustGetenv("ThisDomainsUuid")
+
+	// Extract if native pusub client library should be used or not
+	common_config.UseNativeGcpPubSubClientLibrary, err = strconv.ParseBool(mustGetenv("UseNativeGcpPubSubClientLibrary"))
+	if err != nil {
+		fmt.Println("Couldn't convert environment variable 'UseNativeGcpPubSubClientLibrary:' to an boolean, error: ", err)
+		os.Exit(0)
+	}
 
 }

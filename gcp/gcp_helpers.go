@@ -617,7 +617,6 @@ func handleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 // RefreshTokenResponse represents the JSON response from the OAuth2 provider.
-
 type RefreshTokenResponse struct {
 	AccessToken  string    `json:"access_token"`
 	ExpiresIn    int64     `json:"expires_in"`

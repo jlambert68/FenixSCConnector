@@ -17,6 +17,8 @@ import (
 	"time"
 )
 
+// PullPubSubTestInstructionExecutionMessages
+// Use GCP Client Library to subscribe to a PubSub-Topic
 func PullPubSubTestInstructionExecutionMessages(accessTokenReceivedChannelPtr *chan bool) {
 	projectID := common_config.GcpProject
 	subID := generatePubSubTopicSubscriptionNameForExecutionStatusUpdates()
@@ -32,17 +34,15 @@ func PullPubSubTestInstructionExecutionMessages(accessTokenReceivedChannelPtr *c
 	}).Debug("Outgoing 'PullPubSubTestInstructionExecutionMessages'")
 
 	// Before Starting PubSub-receiver secure that an access token has been received
-	fmt.Println(len(accessTokenReceivedChannel))
 	for {
 		var accessTokenReceived bool
 		accessTokenReceived = <-accessTokenReceivedChannel
 
 		if accessTokenReceived == true {
 			// Continue when we got an access token
-			fmt.Println("Hej")
 			break
 		} else {
-			fmt.Println("HejHopp")
+
 		}
 
 	}

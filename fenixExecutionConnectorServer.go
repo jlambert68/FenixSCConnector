@@ -123,7 +123,16 @@ func fenixExecutionConnectorMain() {
 
 	// Start up PubSub-receiver
 	if common_config.UsePubSubToReceiveMessagesFromWorker == true {
-		go incomingPubSubMessages.PullPubSubTestInstructionExecutionMessagesGcpRestApi(&accessTokenWasReceivedChannel)
+
+		if common_config.UseNativeGcpPubSubClientLibrary == true {
+			// Use Native GCP PubSub Client Library
+			go incomingPubSubMessages.PullPubSubTestInstructionExecutionMessagesGcpClientLib(&accessTokenWasReceivedChannel)
+
+		} else {
+			// Use REST to call GCP PubSub
+			go incomingPubSubMessages.PullPubSubTestInstructionExecutionMessagesGcpRestApi(&accessTokenWasReceivedChannel)
+
+		}
 	}
 
 	// Wait for 'ctrl c' to exit

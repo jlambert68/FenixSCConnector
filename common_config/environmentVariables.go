@@ -39,4 +39,5 @@ var (
 	LocalServiceAccountPath                 string
 	TestInstructionExecutionPubSubTopicBase string
 	ThisDomainsUuid                         string
+	UseNativeGcpPubSubClientLibrary         bool
 )
