@@ -113,6 +113,11 @@ func fenixExecutionConnectorMain() {
 
 	// 	Inform Worker that Connector is ready to receive work
 	go func() {
+
+		// Send Supported TestInstructions, TesInstructionContainers and Allowed Users to Worker
+		fenixExecutionConnectorObject.TestInstructionExecutionEngine.MessagesToExecutionWorkerObjectReference.
+			SendSupportedTestInstructionsAndTestInstructionContainersAndAllowedUsers()
+
 		// Wait 5 seconds before informing Worker that Connector is ready for Work
 		time.Sleep(5 * time.Second)
 		// Inform Worker that Connector is closing down

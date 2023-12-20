@@ -293,7 +293,7 @@ func init() {
 	// Extract environment variable for 'ThisDomainsUuid'
 	common_config.ThisDomainsUuid = mustGetenv("ThisDomainsUuid")
 
-	// Extract if native pusub client library should be used or not
+	// Extract if native pubsub client library should be used or not
 	common_config.UseNativeGcpPubSubClientLibrary, err = strconv.ParseBool(mustGetenv("UseNativeGcpPubSubClientLibrary"))
 	if err != nil {
 		fmt.Println("Couldn't convert environment variable 'UseNativeGcpPubSubClientLibrary:' to an boolean, error: ", err)

@@ -58,10 +58,12 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendReport
 
 	// Creates a new temporary client only to be used for this call
 	var tempFenixExecutionWorkerGrpcClient fenixExecutionWorkerGrpcApi.FenixExecutionWorkerConnectorGrpcServicesClient
-	tempFenixExecutionWorkerGrpcClient = fenixExecutionWorkerGrpcApi.NewFenixExecutionWorkerConnectorGrpcServicesClient(remoteFenixExecutionWorkerServerConnection)
+	tempFenixExecutionWorkerGrpcClient = fenixExecutionWorkerGrpcApi.NewFenixExecutionWorkerConnectorGrpcServicesClient(
+		remoteFenixExecutionWorkerServerConnection)
 
 	// Do gRPC-call
-	returnMessage, err := tempFenixExecutionWorkerGrpcClient.ConnectorReportCompleteTestInstructionExecutionResult(ctx, finalTestInstructionExecutionResultMessage)
+	returnMessage, err := tempFenixExecutionWorkerGrpcClient.ConnectorReportCompleteTestInstructionExecutionResult(
+		ctx, finalTestInstructionExecutionResultMessage)
 
 	// Shouldn't happen
 	if err != nil {

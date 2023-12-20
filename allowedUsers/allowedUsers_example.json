@@ -1,0 +1,18 @@
+{
+  "AllowedUsers": [
+    {
+      "UserIdOnComputer": "myloginId1",
+      "GCPAuthenticatedUser": "first1.last1@company.se",
+      "UserEmail": "first1.last1@company.se",
+      "UserFirstName": "First1",
+      "UserLastName": "Last1"
+    },
+    {
+      "UserIdOnComputer": "myloginId2",
+      "GCPAuthenticatedUser": "first2.last2@company.se",
+      "UserEmail": "first2.last2@company.se",
+      "UserFirstName": "First2",
+      "UserLastName": "Last2"
+    }
+  ]
+}
