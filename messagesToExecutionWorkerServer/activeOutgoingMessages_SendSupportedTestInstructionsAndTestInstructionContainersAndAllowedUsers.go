@@ -8,6 +8,7 @@ import (
 	"github.com/jlambert68/FenixOnPremDemoTestInstructionAdmin/TestInstructionsAndTesInstructionContainersAndAllowedUsers"
 	"github.com/jlambert68/FenixOnPremDemoTestInstructionAdmin/TestInstructionsAndTesInstructionContainersAndAllowedUsers/DomainData"
 	"github.com/jlambert68/FenixTestInstructionsAdminShared/TestInstructionAndTestInstuctionContainerTypes"
+	"github.com/jlambert68/FenixTestInstructionsAdminShared/TypeAndStructs"
 	"github.com/jlambert68/FenixTestInstructionsAdminShared/shared_code"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -63,7 +64,8 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendSuppor
 
 	// Verify recreated Hashes from gRPC-Worker-message
 	var errorSliceWorker []error
-	errorSliceWorker = shared_code.VerifyTestInstructionAndTestInstructionContainerAndUsersMessageHashes(
+	errorSliceWorker = shared_code.VerifyTestInstructionAndTestInstructionContainerAndUsersMessageHashesAndDomain(
+		TypeAndStructs.DomainUUIDType(common_config.ThisDomainsUuid),
 		testInstructionsAndTestInstructionContainersFromGrpcWorkerMessage)
 	if errorSliceWorker != nil {
 		common_config.Logger.WithFields(logrus.Fields{
