@@ -5,14 +5,28 @@
       "GCPAuthenticatedUser": "first1.last1@company.se",
       "UserEmail": "first1.last1@company.se",
       "UserFirstName": "First1",
-      "UserLastName": "Last1"
+      "UserLastName": "Last1",
+      "UserAuthorizationRights": {
+        "CanListAndViewTestCaseOwnedByThisDomain": true,
+        "CanBuildAndSaveTestCaseOwnedByThisDomain": true,
+        "CanListAndViewTestCaseHavingTIandTICFromThisDomain": true,
+        "CanListAndViewTestCaseHavingTIandTICFromThisDomainExtended": true,
+        "CanBuildAndSaveTestCaseHavingTIandTICFromThisDomain": true
+      }
     },
     {
       "UserIdOnComputer": "myloginId2",
       "GCPAuthenticatedUser": "first2.last2@company.se",
       "UserEmail": "first2.last2@company.se",
       "UserFirstName": "First2",
-      "UserLastName": "Last2"
+      "UserLastName": "Last2",
+      "UserAuthorizationRights": {
+        "CanListAndViewTestCaseOwnedByThisDomain": true,
+        "CanBuildAndSaveTestCaseOwnedByThisDomain": false,
+        "CanListAndViewTestCaseHavingTIandTICFromThisDomain": true,
+        "CanListAndViewTestCaseHavingTIandTICFromThisDomainExtended": false,
+        "CanBuildAndSaveTestCaseHavingTIandTICFromThisDomain": false
+      }
     }
   ]
 }

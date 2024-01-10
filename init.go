@@ -300,4 +300,13 @@ func init() {
 		os.Exit(0)
 	}
 
+	// Extract if a New Baseline for TestInstructions, TestInstructionContainers and Users should be saved in database
+	common_config.ForceNewBaseLineForTestInstructionsAndTestInstructionContainers, err = strconv.ParseBool(
+		mustGetenv("ForceNewBaseLineForTestInstructionsAndTestInstructionContainers"))
+	if err != nil {
+		fmt.Println("Couldn't convert environment variable "+
+			"'ForceNewBaseLineForTestInstructionsAndTestInstructionContainers:' to an boolean, error: ", err)
+		os.Exit(0)
+	}
+
 }

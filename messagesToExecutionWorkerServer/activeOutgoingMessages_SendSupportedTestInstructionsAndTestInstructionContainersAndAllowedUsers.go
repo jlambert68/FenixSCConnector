@@ -31,6 +31,14 @@ func (toExecutionWorkerObject *MessagesToExecutionWorkerObjectStruct) SendSuppor
 	// Create supported TestInstructions, TestInstructionContainers and Allowed Users
 	TestInstructionsAndTesInstructionContainersAndAllowedUsers.GenerateTestInstructionsAndTestInstructionContainersAndAllowedUsers_OnPremDemo()
 
+	// Make override on if a New Baseline should be saved in database for TestInstructions, TestInstructionContainers and Allowed Users
+	if common_config.ForceNewBaseLineForTestInstructionsAndTestInstructionContainers == true {
+
+		TestInstructionsAndTesInstructionContainersAndAllowedUsers.
+			TestInstructionsAndTestInstructionContainersAndAllowedUsers_OnPremDemo.
+			ForceNewBaseLineForTestInstructionsAndTestInstructionContainers = true
+	}
+
 	var supportedTestInstructionsAndTestInstructionContainersAndAllowedUsers *TestInstructionAndTestInstuctionContainerTypes.TestInstructionsAndTestInstructionsContainersStruct
 	supportedTestInstructionsAndTestInstructionContainersAndAllowedUsers = TestInstructionsAndTesInstructionContainersAndAllowedUsers.TestInstructionsAndTestInstructionContainersAndAllowedUsers_OnPremDemo
 

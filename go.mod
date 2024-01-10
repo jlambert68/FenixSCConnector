@@ -11,9 +11,9 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/pat v1.0.1
 	github.com/gorilla/sessions v1.2.1
-	github.com/jlambert68/FenixGrpcApi v0.0.0-20231230173749-478c09bfb5a2
-	github.com/jlambert68/FenixOnPremDemoTestInstructionAdmin v0.0.0-20231231143248-389d0a9b43f0
-	github.com/jlambert68/FenixTestInstructionsAdminShared v0.0.0-20231231142721-2fcde1f3cb05
+	github.com/jlambert68/FenixGrpcApi v0.0.0-20240103180010-f01adaa46d3d
+	github.com/jlambert68/FenixOnPremDemoTestInstructionAdmin v0.0.0-20240108170939-b57f9ca01a8d
+	github.com/jlambert68/FenixTestInstructionsAdminShared v0.0.0-20240103135859-01e613300ea3
 	github.com/jlambert68/FenixTestInstructionsDataAdmin v0.0.0-20230828114544-4a2e793bf60d
 	github.com/markbates/goth v1.78.0
 	github.com/sirupsen/logrus v1.9.3
